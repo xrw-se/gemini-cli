@@ -245,6 +245,7 @@ export class SubAgentScope {
   private readonly toolConfig?: ToolConfig;
   private readonly outputConfig?: OutputConfig;
   private readonly onMessage?: (message: string) => void;
+  private readonly toolRegistry: ToolRegistry;
 
   /**
    * Constructs a new SubAgentScope instance.
@@ -261,6 +262,7 @@ export class SubAgentScope {
     private readonly promptConfig: PromptConfig,
     private readonly modelConfig: ModelConfig,
     private readonly runConfig: RunConfig,
+    toolRegistry: ToolRegistry,
     options: SubAgentOptions = {},
   ) {
     const randomPart = Math.random().toString(36).slice(2, 8);
@@ -268,6 +270,7 @@ export class SubAgentScope {
     this.toolConfig = options.toolConfig;
     this.outputConfig = options.outputConfig;
     this.onMessage = options.onMessage;
+    this.toolRegistry = toolRegistry;
   }
 
   /**
@@ -291,41 +294,45 @@ export class SubAgentScope {
     runConfig: RunConfig,
     options: SubAgentOptions = {},
   ): Promise<SubAgentScope> {
+    const subagentToolRegistry = new ToolRegistry(runtimeContext);
     if (options.toolConfig) {
-      const toolRegistry: ToolRegistry = await runtimeContext.getToolRegistry();
-      const toolsToLoad: string[] = [];
       for (const tool of options.toolConfig.tools) {
         if (typeof tool === 'string') {
-          toolsToLoad.push(tool);
+          const toolFromRegistry = (
+            await runtimeContext.getToolRegistry()
+          ).getTool(tool);
+          if (toolFromRegistry) {
+            subagentToolRegistry.registerTool(toolFromRegistry);
+          }
+        } else {
+          // This is a FunctionDeclaration, which we can't add to the registry.
+          // We'll rely on the validation below to catch any issues.
         }
       }
 
-      for (const toolName of toolsToLoad) {
-        const tool = toolRegistry.getTool(toolName);
-        if (tool) {
-          const requiredParams = tool.schema.parameters?.required ?? [];
-          if (requiredParams.length > 0) {
-            // This check is imperfect. A tool might require parameters but still
-            // be interactive (e.g., `delete_file(path)`). However, we cannot
-            // build a generic invocation without knowing what dummy parameters
-            // to provide. Crashing here because `build({})` fails is worse
-            // than allowing a potential hang later if an interactive tool is
-            // used. This is a best-effort check.
-            console.warn(
-              `Cannot check tool "${toolName}" for interactivity because it requires parameters. Assuming it is safe for non-interactive use.`,
-            );
-            continue;
-          }
-
-          const invocation = tool.build({});
-          const confirmationDetails = await invocation.shouldConfirmExecute(
-            new AbortController().signal,
+      for (const tool of subagentToolRegistry.getAllTools()) {
+        const requiredParams = tool.schema.parameters?.required ?? [];
+        if (requiredParams.length > 0) {
+          // This check is imperfect. A tool might require parameters but still
+          // be interactive (e.g., `delete_file(path)`). However, we cannot
+          // build a generic invocation without knowing what dummy parameters
+          // to provide. Crashing here because `build({})` fails is worse
+          // than allowing a potential hang later if an interactive tool is
+          // used. This is a best-effort check.
+          console.warn(
+            `Cannot check tool "${tool.name}" for interactivity because it requires parameters. Assuming it is safe for non-interactive use.`,
           );
-          if (confirmationDetails) {
-            throw new Error(
-              `Tool "${toolName}" requires user confirmation and cannot be used in a non-interactive subagent.`,
-            );
-          }
+          continue;
+        }
+
+        const invocation = tool.build({});
+        const confirmationDetails = await invocation.shouldConfirmExecute(
+          new AbortController().signal,
+        );
+        if (confirmationDetails) {
+          throw new Error(
+            `Tool "${tool.name}" requires user confirmation and cannot be used in a non-interactive subagent.`,
+          );
         }
       }
     }
@@ -336,6 +343,7 @@ export class SubAgentScope {
       promptConfig,
       modelConfig,
       runConfig,
+      subagentToolRegistry,
       options,
     );
   }
@@ -359,8 +367,6 @@ export class SubAgentScope {
       }
 
       const abortController = new AbortController();
-      const toolRegistry: ToolRegistry =
-        await this.runtimeContext.getToolRegistry();
 
       // Prepare the list of tools available to the subagent.
       const toolsList: FunctionDeclaration[] = [];
@@ -374,7 +380,7 @@ export class SubAgentScope {
           }
         }
         toolsList.push(
-          ...toolRegistry.getFunctionDeclarationsFiltered(toolsToLoad),
+          ...this.toolRegistry.getFunctionDeclarationsFiltered(toolsToLoad),
         );
       }
       // Add local scope functions if outputs are expected.
@@ -441,7 +447,7 @@ export class SubAgentScope {
         if (functionCalls.length > 0) {
           currentMessages = await this.processFunctionCalls(
             functionCalls,
-            toolRegistry,
+            this.toolRegistry,
             abortController,
             promptId,
           );
