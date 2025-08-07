@@ -128,7 +128,8 @@ describe('handleAtCommand', () => {
       path.join(testRootDir, 'path', 'to', 'file.txt'),
       fileContent,
     );
-    const query = `@${filePath}`;
+    const escapedFilePath = escapePath(filePath);
+    const query = `@${escapedFilePath}`;
 
     const result = await handleAtCommand({
       query,
@@ -141,7 +142,7 @@ describe('handleAtCommand', () => {
 
     expect(result).toEqual({
       processedQuery: [
-        { text: `@${filePath}` },
+        { text: `@${escapedFilePath}` },
         { text: '\n--- Content from referenced files ---' },
         { text: `\nContent from @${filePath}:\n` },
         { text: fileContent },
@@ -169,7 +170,8 @@ describe('handleAtCommand', () => {
       fileContent,
     );
     const dirPath = path.dirname(filePath);
-    const query = `@${dirPath}`;
+    const escapedDirPath = escapePath(dirPath);
+    const query = `@${escapedDirPath}`;
     const resolvedGlob = `${dirPath}/**`;
 
     const result = await handleAtCommand({
@@ -183,7 +185,7 @@ describe('handleAtCommand', () => {
 
     expect(result).toEqual({
       processedQuery: [
-        { text: `@${resolvedGlob}` },
+        { text: `@${escapedDirPath}` },
         { text: '\n--- Content from referenced files ---' },
         { text: `\nContent from @${filePath}:\n` },
         { text: fileContent },
@@ -206,9 +208,10 @@ describe('handleAtCommand', () => {
       path.join(testRootDir, 'doc.md'),
       fileContent,
     );
+    const escapedFilePath = escapePath(filePath);
     const textBefore = 'Explain this: ';
     const textAfter = ' in detail.';
-    const query = `${textBefore}@${filePath}${textAfter}`;
+    const query = `${textBefore}@${escapedFilePath}${textAfter}`;
 
     const result = await handleAtCommand({
       query,
@@ -221,7 +224,7 @@ describe('handleAtCommand', () => {
 
     expect(result).toEqual({
       processedQuery: [
-        { text: `${textBefore}@${filePath}${textAfter}` },
+        { text: `${textBefore}@${escapedFilePath}${textAfter}` },
         { text: '\n--- Content from referenced files ---' },
         { text: `\nContent from @${filePath}:\n` },
         { text: fileContent },
@@ -287,7 +290,9 @@ describe('handleAtCommand', () => {
       path.join(testRootDir, 'file2.md'),
       content2,
     );
-    const query = `@${file1Path} @${file2Path}`;
+    const escapedFile1Path = escapePath(file1Path);
+    const escapedFile2Path = escapePath(file2Path);
+    const query = `@${escapedFile1Path} @${escapedFile2Path}`;
 
     const result = await handleAtCommand({
       query,
@@ -326,7 +331,9 @@ describe('handleAtCommand', () => {
       content2,
     );
     const text3 = ' please.';
-    const query = `${text1}@${file1Path}${text2}@${file2Path}${text3}`;
+    const escapedFile1Path = escapePath(file1Path);
+    const escapedFile2Path = escapePath(file2Path);
+    const query = `${text1}@${escapedFile1Path}${text2}@${escapedFile2Path}${text3}`;
 
     const result = await handleAtCommand({
       query,
@@ -363,7 +370,9 @@ describe('handleAtCommand', () => {
       path.join(testRootDir, 'resolved', 'valid2.actual'),
       content2,
     );
-    const query = `Look at @${file1Path} then @${invalidFile} and also just @ symbol, then @${file2Path}`;
+    const escapedFile1Path = escapePath(file1Path);
+    const escapedFile2Path = escapePath(file2Path);
+    const query = `Look at @${escapedFile1Path} then @${invalidFile} and also just @ symbol, then @${escapedFile2Path}`;
 
     const result = await handleAtCommand({
       query,
@@ -377,7 +386,7 @@ describe('handleAtCommand', () => {
     expect(result).toEqual({
       processedQuery: [
         {
-          text: `Look at @${file1Path} then @${invalidFile} and also just @ symbol, then @${file2Path}`,
+          text: `Look at @${escapedFile1Path} then @${invalidFile} and also just @ symbol, then @${escapedFile2Path}`,
         },
         { text: '\n--- Content from referenced files ---' },
         { text: `\nContent from @${file2Path}:\n` },
@@ -825,7 +834,9 @@ describe('handleAtCommand', () => {
         path.join(testRootDir, 'second.txt'),
         content2,
       );
-      const query = `Compare @${file1Path}, @${file2Path}; what's different?`;
+      const escapedFile1Path = escapePath(file1Path);
+      const escapedFile2Path = escapePath(file2Path);
+      const query = `Compare @${escapedFile1Path}, @${escapedFile2Path}; what's different?`;
 
       const result = await handleAtCommand({
         query,
@@ -838,7 +849,9 @@ describe('handleAtCommand', () => {
 
       expect(result).toEqual({
         processedQuery: [
-          { text: `Compare @${file1Path}, @${file2Path}; what's different?` },
+          {
+            text: `Compare @${escapedFile1Path}, @${escapedFile2Path}; what's different?`,
+          },
           { text: '\n--- Content from referenced files ---' },
           { text: `\nContent from @${file1Path}:\n` },
           { text: content1 },
@@ -886,7 +899,8 @@ describe('handleAtCommand', () => {
         path.join(testRootDir, 'example.d.ts'),
         fileContent,
       );
-      const query = `Analyze @${filePath} for type definitions.`;
+      const escapedFilePath = escapePath(filePath);
+      const query = `Analyze @${escapedFilePath} for type definitions.`;
 
       const result = await handleAtCommand({
         query,
@@ -899,7 +913,7 @@ describe('handleAtCommand', () => {
 
       expect(result).toEqual({
         processedQuery: [
-          { text: `Analyze @${filePath} for type definitions.` },
+          { text: `Analyze @${escapedFilePath} for type definitions.` },
           { text: '\n--- Content from referenced files ---' },
           { text: `\nContent from @${filePath}:\n` },
           { text: fileContent },
@@ -915,7 +929,8 @@ describe('handleAtCommand', () => {
         path.join(testRootDir, 'config.json'),
         fileContent,
       );
-      const query = `Check @${filePath}. This file contains settings.`;
+      const escapedFilePath = escapePath(filePath);
+      const query = `Check @${escapedFilePath}. This file contains settings.`;
 
       const result = await handleAtCommand({
         query,
@@ -928,7 +943,7 @@ describe('handleAtCommand', () => {
 
       expect(result).toEqual({
         processedQuery: [
-          { text: `Check @${filePath}. This file contains settings.` },
+          { text: `Check @${escapedFilePath}. This file contains settings.` },
           { text: '\n--- Content from referenced files ---' },
           { text: `\nContent from @${filePath}:\n` },
           { text: fileContent },
@@ -944,7 +959,8 @@ describe('handleAtCommand', () => {
         path.join(testRootDir, 'package.json'),
         fileContent,
       );
-      const query = `Review @${filePath}, then check dependencies.`;
+      const escapedFilePath = escapePath(filePath);
+      const query = `Review @${escapedFilePath}, then check dependencies.`;
 
       const result = await handleAtCommand({
         query,
@@ -957,7 +973,7 @@ describe('handleAtCommand', () => {
 
       expect(result).toEqual({
         processedQuery: [
-          { text: `Review @${filePath}, then check dependencies.` },
+          { text: `Review @${escapedFilePath}, then check dependencies.` },
           { text: '\n--- Content from referenced files ---' },
           { text: `\nContent from @${filePath}:\n` },
           { text: fileContent },
@@ -973,7 +989,8 @@ describe('handleAtCommand', () => {
         path.join(testRootDir, 'version.1.2.3.txt'),
         fileContent,
       );
-      const query = `Check @${filePath} contains version information.`;
+      const escapedFilePath = escapePath(filePath);
+      const query = `Check @${escapedFilePath} contains version information.`;
 
       const result = await handleAtCommand({
         query,
@@ -986,7 +1003,7 @@ describe('handleAtCommand', () => {
 
       expect(result).toEqual({
         processedQuery: [
-          { text: `Check @${filePath} contains version information.` },
+          { text: `Check @${escapedFilePath} contains version information.` },
           { text: '\n--- Content from referenced files ---' },
           { text: `\nContent from @${filePath}:\n` },
           { text: fileContent },
@@ -1002,7 +1019,8 @@ describe('handleAtCommand', () => {
         path.join(testRootDir, 'end.txt'),
         fileContent,
       );
-      const query = `Show me @${filePath}.`;
+      const escapedFilePath = escapePath(filePath);
+      const query = `Show me @${escapedFilePath}.`;
 
       const result = await handleAtCommand({
         query,
@@ -1015,7 +1033,7 @@ describe('handleAtCommand', () => {
 
       expect(result).toEqual({
         processedQuery: [
-          { text: `Show me @${filePath}.` },
+          { text: `Show me @${escapedFilePath}.` },
           { text: '\n--- Content from referenced files ---' },
           { text: `\nContent from @${filePath}:\n` },
           { text: fileContent },
@@ -1061,7 +1079,8 @@ describe('handleAtCommand', () => {
         path.join(testRootDir, 'basicfile.txt'),
         fileContent,
       );
-      const query = `Check @${filePath} please.`;
+      const escapedFilePath = escapePath(filePath);
+      const query = `Check @${escapedFilePath} please.`;
 
       const result = await handleAtCommand({
         query,
@@ -1074,7 +1093,7 @@ describe('handleAtCommand', () => {
 
       expect(result).toEqual({
         processedQuery: [
-          { text: `Check @${filePath} please.` },
+          { text: `Check @${escapedFilePath} please.` },
           { text: '\n--- Content from referenced files ---' },
           { text: `\nContent from @${filePath}:\n` },
           { text: fileContent },
