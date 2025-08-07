@@ -172,7 +172,7 @@ describe('handleAtCommand', () => {
     const dirPath = path.dirname(filePath);
     const escapedDirPath = escapePath(dirPath);
     const query = `@${escapedDirPath}`;
-    const resolvedGlob = `${dirPath}/**`;
+    const resolvedGlob = `${escapedDirPath}/**`;
 
     const result = await handleAtCommand({
       query,
@@ -185,7 +185,7 @@ describe('handleAtCommand', () => {
 
     expect(result).toEqual({
       processedQuery: [
-        { text: `@${escapedDirPath}` },
+        { text: `@${resolvedGlob}` },
         { text: '\n--- Content from referenced files ---' },
         { text: `\nContent from @${filePath}:\n` },
         { text: fileContent },
