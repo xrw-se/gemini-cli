@@ -166,6 +166,34 @@ export function unescapePath(filePath: string): string {
 }
 
 /**
+ * Normalizes Windows-style paths by converting backslashes to forward slashes.
+ * Preserves backslashes that are used to escape shell special characters.
+ * @param filePath The path to normalize.
+ * @returns The normalized path with forward slashes.
+ */
+export function normalizePath(filePath: string): string {
+  let result = '';
+  for (let i = 0; i < filePath.length; i++) {
+    const char = filePath[i];
+
+    if (char === '\\') {
+      const nextChar = filePath[i + 1];
+
+      // If the backslash is escaping a shell special character, keep it
+      if (nextChar && SHELL_SPECIAL_CHARS.test(nextChar)) {
+        result += char; // Keep the backslash for escaping
+      } else {
+        // Convert path separator backslash to forward slash
+        result += '/';
+      }
+    } else {
+      result += char;
+    }
+  }
+  return result;
+}
+
+/**
  * Generates a unique hash for a project based on its root path.
  * @param projectRoot The absolute path to the project's root directory.
  * @returns A SHA256 hash of the project root path.

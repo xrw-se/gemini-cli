@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { escapePath, unescapePath } from './paths.js';
+import { escapePath, unescapePath, normalizePath } from './paths.js';
 
 describe('escapePath', () => {
   it('should escape spaces', () => {
@@ -210,5 +210,92 @@ describe('unescapePath', () => {
       'path\\\\\\\\ file.txt',
     );
     expect(unescapePath('file\\\\\\(test\\).txt')).toBe('file\\\\(test).txt');
+  });
+});
+
+describe('normalizePath', () => {
+  it('should convert Windows backslashes to forward slashes', () => {
+    expect(normalizePath('C:\\Users\\name\\file.txt')).toBe(
+      'C:/Users/name/file.txt',
+    );
+    expect(normalizePath('folder\\subfolder\\file.txt')).toBe(
+      'folder/subfolder/file.txt',
+    );
+  });
+
+  it('should preserve backslashes that escape shell special characters', () => {
+    expect(normalizePath('file\\ with\\ spaces.txt')).toBe(
+      'file\\ with\\ spaces.txt',
+    );
+    expect(normalizePath('file\\(test\\).txt')).toBe('file\\(test\\).txt');
+    expect(normalizePath('file\\[backup\\].txt')).toBe('file\\[backup\\].txt');
+    expect(normalizePath('file\\{temp\\}.txt')).toBe('file\\{temp\\}.txt');
+    expect(normalizePath('file\\;name.txt')).toBe('file\\;name.txt');
+    expect(normalizePath('file\\&name.txt')).toBe('file\\&name.txt');
+    expect(normalizePath('file\\|name.txt')).toBe('file\\|name.txt');
+    expect(normalizePath('file\\*.txt')).toBe('file\\*.txt');
+    expect(normalizePath('file\\?.txt')).toBe('file\\?.txt');
+    expect(normalizePath('file\\$name.txt')).toBe('file\\$name.txt');
+    expect(normalizePath('file\\`name.txt')).toBe('file\\`name.txt');
+    expect(normalizePath("file\\'name.txt")).toBe("file\\'name.txt");
+    expect(normalizePath('file\\"name.txt')).toBe('file\\"name.txt');
+    expect(normalizePath('file\\#name.txt')).toBe('file\\#name.txt');
+    expect(normalizePath('file\\!name.txt')).toBe('file\\!name.txt');
+    expect(normalizePath('file\\~name.txt')).toBe('file\\~name.txt');
+    expect(normalizePath('file\\<name\\>.txt')).toBe('file\\<name\\>.txt');
+  });
+
+  it('should handle mixed Windows paths with escaped characters', () => {
+    expect(normalizePath('C:\\Users\\name\\My\\ Documents\\file.txt')).toBe(
+      'C:/Users/name/My\\ Documents/file.txt',
+    );
+    expect(normalizePath('folder\\subfolder\\file\\ with\\ spaces.txt')).toBe(
+      'folder/subfolder/file\\ with\\ spaces.txt',
+    );
+    expect(normalizePath('path\\to\\file\\(backup\\).txt')).toBe(
+      'path/to/file\\(backup\\).txt',
+    );
+  });
+
+  it('should handle complex mixed scenarios', () => {
+    expect(
+      normalizePath('C:\\Program\\ Files\\My\\ App\\config\\file.txt'),
+    ).toBe('C:/Program\\ Files/My\\ App/config/file.txt');
+    expect(
+      normalizePath('\\\\server\\share\\folder\\file\\[backup\\].txt'),
+    ).toBe('//server/share/folder/file\\[backup\\].txt');
+  });
+
+  it('should handle paths that are already normalized', () => {
+    expect(normalizePath('path/to/file.txt')).toBe('path/to/file.txt');
+    expect(normalizePath('file\\ with\\ spaces.txt')).toBe(
+      'file\\ with\\ spaces.txt',
+    );
+  });
+
+  it('should handle edge cases', () => {
+    expect(normalizePath('')).toBe('');
+    expect(normalizePath('\\')).toBe('/');
+    expect(normalizePath('\\\\')).toBe('//');
+    expect(normalizePath('file.txt')).toBe('file.txt');
+  });
+
+  it('should handle backslashes at the end of paths', () => {
+    expect(normalizePath('folder\\')).toBe('folder/');
+    expect(normalizePath('folder\\ ')).toBe('folder\\ '); // Escaped space
+  });
+
+  it('should preserve escaped tabs', () => {
+    expect(normalizePath('file\\	name.txt')).toBe('file\\	name.txt');
+    expect(normalizePath('folder\\file\\	with\\	tabs.txt')).toBe(
+      'folder/file\\	with\\	tabs.txt',
+    );
+  });
+
+  it('should handle UNC paths', () => {
+    expect(normalizePath('\\\\server\\share')).toBe('//server/share');
+    expect(normalizePath('\\\\server\\share\\folder\\file.txt')).toBe(
+      '//server/share/folder/file.txt',
+    );
   });
 });
