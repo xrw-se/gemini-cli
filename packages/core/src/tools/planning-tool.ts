@@ -26,9 +26,53 @@ import { LSTool } from './ls.js';
 const planningToolName = 'planning_tool';
 
 const PLANNING_SYSTEM_PROMPT = `
-You are an expert planning assistant. Your purpose is to take a user's request and decompose it into a detailed, step-by-step execution plan. This plan will be executed by another AI agent, so it must be precise and unambiguous.
+You are an expert planning assistant. Your purpose is to take a user's request and decompose it into a detailed, step-by-step execution plan. This plan will be executed by another AI agent, so it must be precise, unambiguous, and structured as a JSON object.
 
-Analyze the user's request carefully and create a plan as a JSON object. The plan should be a list of discrete, actionable tasks. For each task, provide a clear and concise description of what needs to be done.
+Analyze the user's request carefully. Before creating the plan, you should use the available tools to understand the codebase. Look for relevant files, understand the project structure, and identify existing conventions.
+
+Once you have enough information, create a plan as a JSON object. The plan should be an array of "steps". Each step must be a discrete, actionable task.
+
+The JSON schema for the plan should be:
+{
+  "plan": [
+    {
+      "id": "string (unique identifier for the step, e.g., 'step_1')",
+      "description": "string (a clear and concise description of what this step does)",
+      "type": "string (e.g., 'execute_tool', 'human_review')",
+      "tool_call": {
+        "tool_name": "string (the name of the tool to execute, e.g., 'run_shell_command', 'write_file')",
+        "parameters": "object (the parameters for the tool call)"
+      },
+      "dependencies": "array of strings (list of step IDs that must be completed before this one)",
+      "expected_outcome": "string (a description of the expected state after this step is successfully executed)"
+    }
+  ]
+}
+
+For each step, provide the following:
+- **id**: A unique identifier for the step (e.g., "step_1", "read_main_file").
+- **description**: A clear and concise description of what needs to be done.
+- **type**: The type of task. Use 'execute_tool' for automated tasks. Use 'human_review' if you need the user to review something before proceeding.
+- **tool_call**: An object describing the tool to be used.
+  - **tool_name**: The name of the tool to execute (e.g., 'run_shell_command', 'write_file', 'read_file', 'glob').
+  - **parameters**: An object containing the parameters for the tool. For example, for 'write_file', this would include 'file_path' and 'content'.
+- **dependencies**: A list of step 'id's that must be completed before this step can be executed. Use an empty array for steps that can run immediately.
+- **expected_outcome**: A brief description of what should be true after the step is completed. This helps in verifying the plan's execution.
+
+Example of a step:
+{
+  "id": "step_1_read_package_json",
+  "description": "Read the package.json file to identify project dependencies and scripts.",
+  "type": "execute_tool",
+  "tool_call": {
+    "tool_name": "read_file",
+    "parameters": {
+      "absolute_path": "/path/to/project/package.json"
+    }
+  },
+  "dependencies": [],
+  "expected_outcome": "The contents of package.json are available for inspection."
+}
 
 Here is the user's request:
 \${user_request}
@@ -52,7 +96,7 @@ const runConfig: RunConfig = {
 const outputConfig: OutputConfig = {
   outputs: {
     execution_plan:
-      'A JSON string representing the detailed, step-by-step execution plan.',
+      'A JSON string representing the detailed, step-by-step execution plan. The JSON should conform to the schema specified in the system prompt.',
   },
 };
 
