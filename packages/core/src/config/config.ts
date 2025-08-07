@@ -197,6 +197,7 @@ export interface ConfigParameters {
   ideMode?: boolean;
   loadMemoryFromIncludeDirectories?: boolean;
   chatCompression?: ChatCompressionSettings;
+  usePlanningTool?: boolean;
 }
 
 export class Config {
@@ -259,6 +260,7 @@ export class Config {
   private readonly experimentalAcp: boolean = false;
   private readonly loadMemoryFromIncludeDirectories: boolean = false;
   private readonly chatCompression: ChatCompressionSettings | undefined;
+  private readonly usePlanningTool: boolean;
 
   constructor(params: ConfigParameters) {
     this.sessionId = params.sessionId;
@@ -324,6 +326,7 @@ export class Config {
     this.loadMemoryFromIncludeDirectories =
       params.loadMemoryFromIncludeDirectories ?? false;
     this.chatCompression = params.chatCompression;
+    this.usePlanningTool = params.usePlanningTool ?? false;
 
     if (params.contextFileName) {
       setGeminiMdFilename(params.contextFileName);
@@ -679,6 +682,10 @@ export class Config {
     return this.chatCompression;
   }
 
+  getUsePlanningTool(): boolean {
+    return this.usePlanningTool;
+  }
+
   async getGitService(): Promise<GitService> {
     if (!this.gitService) {
       this.gitService = new GitService(this.targetDir);
@@ -736,7 +743,9 @@ export class Config {
     registerCoreTool(WebSearchTool, this);
 
     // Manually register the planning tool as it has a different structure
-    registry.registerTool(getPlanningTool(this));
+    if (this.getUsePlanningTool()) {
+      registry.registerTool(getPlanningTool(this));
+    }
 
     await registry.discoverAllTools();
     return registry;
