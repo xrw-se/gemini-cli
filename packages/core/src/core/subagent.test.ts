@@ -14,6 +14,7 @@ import {
   RunConfig,
   OutputConfig,
   ToolConfig,
+  SubAgentOptions,
 } from './subagent.js';
 import { Config, ConfigParameters } from '../config/config.js';
 import { GeminiChat } from './geminiChat.js';
@@ -187,6 +188,7 @@ describe('subagent.ts', () => {
         });
 
         const toolConfig: ToolConfig = { tools: ['risky_tool'] };
+        const options: SubAgentOptions = { toolConfig };
 
         await expect(
           SubAgentScope.create(
@@ -195,7 +197,7 @@ describe('subagent.ts', () => {
             promptConfig,
             defaultModelConfig,
             defaultRunConfig,
-            toolConfig,
+            options,
           ),
         ).rejects.toThrow(
           'Tool "risky_tool" requires user confirmation and cannot be used in a non-interactive subagent.',
@@ -215,6 +217,7 @@ describe('subagent.ts', () => {
         });
 
         const toolConfig: ToolConfig = { tools: ['safe_tool'] };
+        const options: SubAgentOptions = { toolConfig };
 
         const scope = await SubAgentScope.create(
           'test-agent',
@@ -222,7 +225,7 @@ describe('subagent.ts', () => {
           promptConfig,
           defaultModelConfig,
           defaultRunConfig,
-          toolConfig,
+          options,
         );
         expect(scope).toBeInstanceOf(SubAgentScope);
       });
@@ -251,6 +254,7 @@ describe('subagent.ts', () => {
         });
 
         const toolConfig: ToolConfig = { tools: ['tool_with_params'] };
+        const options: SubAgentOptions = { toolConfig };
 
         // The creation should succeed without throwing
         const scope = await SubAgentScope.create(
@@ -259,7 +263,7 @@ describe('subagent.ts', () => {
           promptConfig,
           defaultModelConfig,
           defaultRunConfig,
-          toolConfig,
+          options,
         );
 
         expect(scope).toBeInstanceOf(SubAgentScope);
@@ -350,8 +354,7 @@ describe('subagent.ts', () => {
           promptConfig,
           defaultModelConfig,
           defaultRunConfig,
-          undefined, // ToolConfig
-          outputConfig,
+          { outputConfig },
         );
 
         await scope.runNonInteractive(context);
@@ -510,8 +513,7 @@ describe('subagent.ts', () => {
           promptConfig,
           defaultModelConfig,
           defaultRunConfig,
-          undefined,
-          outputConfig,
+          { outputConfig },
         );
 
         await scope.runNonInteractive(new ContextState());
@@ -571,7 +573,7 @@ describe('subagent.ts', () => {
           promptConfig,
           defaultModelConfig,
           defaultRunConfig,
-          toolConfig,
+          { toolConfig },
         );
 
         await scope.runNonInteractive(new ContextState());
@@ -627,7 +629,7 @@ describe('subagent.ts', () => {
           promptConfig,
           defaultModelConfig,
           defaultRunConfig,
-          toolConfig,
+          { toolConfig },
         );
 
         await scope.runNonInteractive(new ContextState());
@@ -673,8 +675,7 @@ describe('subagent.ts', () => {
           promptConfig,
           defaultModelConfig,
           defaultRunConfig,
-          undefined,
-          outputConfig,
+          { outputConfig },
         );
 
         await scope.runNonInteractive(new ContextState());

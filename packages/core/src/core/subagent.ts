@@ -147,6 +147,12 @@ export interface RunConfig {
   max_turns?: number;
 }
 
+export interface SubAgentOptions {
+  toolConfig?: ToolConfig;
+  outputConfig?: OutputConfig;
+  onMessage?: (message: string) => void;
+}
+
 /**
  * Manages the runtime context state for the subagent.
  * This class provides a mechanism to store and retrieve key-value pairs
@@ -236,6 +242,9 @@ export class SubAgentScope {
     emitted_vars: {},
   };
   private readonly subagentId: string;
+  private readonly toolConfig?: ToolConfig;
+  private readonly outputConfig?: OutputConfig;
+  private readonly onMessage?: (message: string) => void;
 
   /**
    * Constructs a new SubAgentScope instance.
@@ -244,8 +253,7 @@ export class SubAgentScope {
    * @param promptConfig - Configuration for the subagent's prompt and behavior.
    * @param modelConfig - Configuration for the generative model parameters.
    * @param runConfig - Configuration for the subagent's execution environment.
-   * @param toolConfig - Optional configuration for tools available to the subagent.
-   * @param outputConfig - Optional configuration for the subagent's expected outputs.
+   * @param options - Optional configurations for the subagent.
    */
   private constructor(
     readonly name: string,
@@ -253,25 +261,26 @@ export class SubAgentScope {
     private readonly promptConfig: PromptConfig,
     private readonly modelConfig: ModelConfig,
     private readonly runConfig: RunConfig,
-    private readonly toolConfig?: ToolConfig,
-    private readonly outputConfig?: OutputConfig,
+    options: SubAgentOptions = {},
   ) {
     const randomPart = Math.random().toString(36).slice(2, 8);
     this.subagentId = `${this.name}-${randomPart}`;
+    this.toolConfig = options.toolConfig;
+    this.outputConfig = options.outputConfig;
+    this.onMessage = options.onMessage;
   }
 
   /**
    * Creates and validates a new SubAgentScope instance.
    * This factory method ensures that all tools provided in the prompt configuration
    * are valid for non-interactive use before creating the subagent instance.
-   * @param {string} name - The name of the subagent.
-   * @param {Config} runtimeContext - The shared runtime configuration and services.
-   * @param {PromptConfig} promptConfig - Configuration for the subagent's prompt and behavior.
-   * @param {ModelConfig} modelConfig - Configuration for the generative model parameters.
-   * @param {RunConfig} runConfig - Configuration for the subagent's execution environment.
-   * @param {ToolConfig} [toolConfig] - Optional configuration for tools.
-   * @param {OutputConfig} [outputConfig] - Optional configuration for expected outputs.
-   * @returns {Promise<SubAgentScope>} A promise that resolves to a valid SubAgentScope instance.
+   * @param name - The name of the subagent.
+   * @param runtimeContext - The shared runtime configuration and services.
+   * @param promptConfig - Configuration for the subagent's prompt and behavior.
+   * @param modelConfig - Configuration for the generative model parameters.
+   * @param runConfig - Configuration for the subagent's execution environment.
+   * @param options - Optional configurations for the subagent.
+   * @returns A promise that resolves to a valid SubAgentScope instance.
    * @throws {Error} If any tool requires user confirmation.
    */
   static async create(
@@ -280,13 +289,12 @@ export class SubAgentScope {
     promptConfig: PromptConfig,
     modelConfig: ModelConfig,
     runConfig: RunConfig,
-    toolConfig?: ToolConfig,
-    outputConfig?: OutputConfig,
+    options: SubAgentOptions = {},
   ): Promise<SubAgentScope> {
-    if (toolConfig) {
+    if (options.toolConfig) {
       const toolRegistry: ToolRegistry = await runtimeContext.getToolRegistry();
       const toolsToLoad: string[] = [];
-      for (const tool of toolConfig.tools) {
+      for (const tool of options.toolConfig.tools) {
         if (typeof tool === 'string') {
           toolsToLoad.push(tool);
         }
@@ -328,8 +336,7 @@ export class SubAgentScope {
       promptConfig,
       modelConfig,
       runConfig,
-      toolConfig,
-      outputConfig,
+      options,
     );
   }
 
@@ -341,44 +348,44 @@ export class SubAgentScope {
    * @returns {Promise<void>} A promise that resolves when the subagent has completed its execution.
    */
   async runNonInteractive(context: ContextState): Promise<void> {
-    const chat = await this.createChatObject(context);
-
-    if (!chat) {
-      this.output.terminate_reason = SubagentTerminateMode.ERROR;
-      return;
-    }
-
-    const abortController = new AbortController();
-    const toolRegistry: ToolRegistry =
-      await this.runtimeContext.getToolRegistry();
-
-    // Prepare the list of tools available to the subagent.
-    const toolsList: FunctionDeclaration[] = [];
-    if (this.toolConfig) {
-      const toolsToLoad: string[] = [];
-      for (const tool of this.toolConfig.tools) {
-        if (typeof tool === 'string') {
-          toolsToLoad.push(tool);
-        } else {
-          toolsList.push(tool);
-        }
-      }
-      toolsList.push(
-        ...toolRegistry.getFunctionDeclarationsFiltered(toolsToLoad),
-      );
-    }
-    // Add local scope functions if outputs are expected.
-    if (this.outputConfig && this.outputConfig.outputs) {
-      toolsList.push(...this.getScopeLocalFuncDefs());
-    }
-
-    let currentMessages: Content[] = [
-      { role: 'user', parts: [{ text: 'Get Started!' }] },
-    ];
-
     const startTime = Date.now();
     let turnCounter = 0;
     try {
+      const chat = await this.createChatObject(context);
+
+      if (!chat) {
+        this.output.terminate_reason = SubagentTerminateMode.ERROR;
+        return;
+      }
+
+      const abortController = new AbortController();
+      const toolRegistry: ToolRegistry =
+        await this.runtimeContext.getToolRegistry();
+
+      // Prepare the list of tools available to the subagent.
+      const toolsList: FunctionDeclaration[] = [];
+      if (this.toolConfig) {
+        const toolsToLoad: string[] = [];
+        for (const tool of this.toolConfig.tools) {
+          if (typeof tool === 'string') {
+            toolsToLoad.push(tool);
+          } else {
+            toolsList.push(tool);
+          }
+        }
+        toolsList.push(
+          ...toolRegistry.getFunctionDeclarationsFiltered(toolsToLoad),
+        );
+      }
+      // Add local scope functions if outputs are expected.
+      if (this.outputConfig && this.outputConfig.outputs) {
+        toolsList.push(...this.getScopeLocalFuncDefs());
+      }
+
+      let currentMessages: Content[] = [
+        { role: 'user', parts: [{ text: 'Get Started!' }] },
+      ];
+
       while (true) {
         // Check termination conditions.
         if (
@@ -409,9 +416,20 @@ export class SubAgentScope {
         );
 
         const functionCalls: FunctionCall[] = [];
+        let textResponse = '';
         for await (const resp of responseStream) {
           if (abortController.signal.aborted) return;
-          if (resp.functionCalls) functionCalls.push(...resp.functionCalls);
+          if (resp.functionCalls) {
+            functionCalls.push(...resp.functionCalls);
+          }
+          const text = resp.text;
+          if (text) {
+            textResponse += text;
+          }
+        }
+
+        if (this.onMessage && textResponse) {
+          this.onMessage(textResponse);
         }
 
         durationMin = (Date.now() - startTime) / (1000 * 60);
@@ -487,6 +505,12 @@ export class SubAgentScope {
     const toolResponseParts: Part[] = [];
 
     for (const functionCall of functionCalls) {
+      if (this.onMessage) {
+        const args = JSON.stringify(functionCall.args ?? {});
+        this.onMessage(
+          `Executing tool: ${functionCall.name} with args ${args}`,
+        );
+      }
       const callId = functionCall.id ?? `${functionCall.name}-${Date.now()}`;
       const requestInfo: ToolCallRequestInfo = {
         callId,
