@@ -9,6 +9,7 @@ import * as path from 'path';
 import { PartListUnion, PartUnion } from '@google/genai';
 import {
   Config,
+  escapePath,
   getErrorMessage,
   isNodeError,
   unescapePath,
@@ -232,7 +233,7 @@ export async function handleAtCommand({
     }
 
     for (const dir of config.getWorkspaceContext().getDirectories()) {
-      let currentPathSpec = pathName;
+      let currentPathSpec = escapePath(pathName);
       let resolvedSuccessfully = false;
       try {
         const absolutePath = path.resolve(dir, pathName);

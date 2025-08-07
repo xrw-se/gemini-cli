@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
 import { handleAtCommand } from './atCommandProcessor.js';
 import {
   Config,
+  escapePath,
   FileDiscoveryService,
   GlobTool,
   ReadManyFilesTool,
@@ -254,7 +255,7 @@ describe('handleAtCommand', () => {
 
     expect(result).toEqual({
       processedQuery: [
-        { text: `@${filePath}` },
+        { text: `@${escapedpath}` },
         { text: '\n--- Content from referenced files ---' },
         { text: `\nContent from @${filePath}:\n` },
         { text: fileContent },
@@ -869,7 +870,7 @@ describe('handleAtCommand', () => {
 
       expect(result).toEqual({
         processedQuery: [
-          { text: `Check @${filePath}, it has spaces.` },
+          { text: `Check @${escapedPath}, it has spaces.` },
           { text: '\n--- Content from referenced files ---' },
           { text: `\nContent from @${filePath}:\n` },
           { text: fileContent },
@@ -1030,7 +1031,8 @@ describe('handleAtCommand', () => {
         path.join(testRootDir, 'file$with&special#chars.txt'),
         fileContent,
       );
-      const query = `Check @${filePath} for content.`;
+      const escapedPath = escapePath(filePath);
+      const query = `Check @${escapedPath} for content.`;
 
       const result = await handleAtCommand({
         query,
@@ -1043,7 +1045,7 @@ describe('handleAtCommand', () => {
 
       expect(result).toEqual({
         processedQuery: [
-          { text: `Check @${filePath} for content.` },
+          { text: `Check @${escapedPath} for content.` },
           { text: '\n--- Content from referenced files ---' },
           { text: `\nContent from @${filePath}:\n` },
           { text: fileContent },
