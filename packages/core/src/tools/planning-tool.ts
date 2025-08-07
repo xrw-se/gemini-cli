@@ -15,7 +15,13 @@ import {
   RunConfig,
   SubAgentScope,
   SubagentTerminateMode,
+  ToolConfig,
 } from '../core/subagent.js';
+import { GlobTool } from './glob.js';
+import { GrepTool } from './grep.js';
+import { ReadFileTool } from './read-file.js';
+import { ReadManyFilesTool } from './read-many-files.js';
+import { LSTool } from './ls.js';
 
 const planningToolName = 'planning_tool';
 
@@ -39,8 +45,8 @@ const modelConfig: ModelConfig = {
 };
 
 const runConfig: RunConfig = {
-  max_time_minutes: 3,
-  max_turns: 8,
+  max_time_minutes: 10,
+  max_turns: 100,
 };
 
 const outputConfig: OutputConfig = {
@@ -134,13 +140,22 @@ class PlanningTool extends BaseTool<{ user_request: string }> {
     onMessage?: (message: string) => void,
   ): Promise<string | null> {
     try {
+      const toolConfig: ToolConfig = {
+        tools: [
+          new ReadFileTool(this.runtimeContext),
+          new ReadManyFilesTool(this.runtimeContext),
+          new GrepTool(this.runtimeContext),
+          new GlobTool(this.runtimeContext),
+          new LSTool(this.runtimeContext),
+        ],
+      };
       const plannerAgent = await SubAgentScope.create(
         'planning-subagent',
         this.runtimeContext,
         promptConfig,
         modelConfig,
         runConfig,
-        { outputConfig, onMessage },
+        { outputConfig, onMessage, toolConfig },
       );
 
       const context = new ContextState();
