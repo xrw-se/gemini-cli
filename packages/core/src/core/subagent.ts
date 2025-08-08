@@ -6,6 +6,7 @@
 
 import { reportError } from '../utils/errorReporting.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
+import { BaseTool, ToolResult } from '../tools/tools.js';
 import { Config } from '../config/config.js';
 import { ToolCallRequestInfo } from './turn.js';
 import { executeToolCall } from './nonInteractiveToolExecutor.js';
@@ -91,10 +92,10 @@ export interface PromptConfig {
  */
 export interface ToolConfig {
   /**
-   * A list of tool names (from the tool registry) or full function declarations
-   * that the subagent is permitted to use.
+   * A list of tool names (from the tool registry), full function declarations,
+   * or BaseTool instances that the subagent is permitted to use.
    */
-  tools: Array<string | FunctionDeclaration>;
+  tools: Array<string | FunctionDeclaration | BaseTool<object, ToolResult>>;
 }
 
 /**
@@ -304,6 +305,8 @@ export class SubAgentScope {
           if (toolFromRegistry) {
             subagentToolRegistry.registerTool(toolFromRegistry);
           }
+        } else if (tool instanceof BaseTool) {
+          subagentToolRegistry.registerTool(tool);
         } else {
           // This is a FunctionDeclaration, which we can't add to the registry.
           // We'll rely on the validation below to catch any issues.
