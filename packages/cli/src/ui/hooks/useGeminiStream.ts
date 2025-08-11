@@ -196,7 +196,7 @@ export const useGeminiStream = (
         );
       }
     }
-  }, [streamingState, config, geminiClient]);
+  }, [streamingState, config, history.length]);
 
   useInput((_input, key) => {
     if (streamingState === StreamingState.Responding && key.escape) {
