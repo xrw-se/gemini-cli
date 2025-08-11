@@ -217,7 +217,10 @@ export const useGeminiStream = (
   ]);
 
   useEffect(() => {
-    if (config.getApprovalMode() === ApprovalMode.YOLO && streamingState === StreamingState.Idle) {
+    if (
+      config.getApprovalMode() === ApprovalMode.YOLO &&
+      streamingState === StreamingState.Idle
+    ) {
       const turnCount = history.length;
       if (turnCount > 0) {
         logConvoFinishedEvent(

@@ -17,6 +17,7 @@ import {
   TrackedCancelledToolCall,
 } from './useReactToolScheduler.js';
 import {
+  ApprovalMode,
   Config,
   EditorType,
   AuthType,
@@ -309,6 +310,7 @@ describe('useGeminiStream', () => {
       getProjectRoot: vi.fn(() => '/test/dir'),
       getCheckpointingEnabled: vi.fn(() => false),
       getGeminiClient: mockGetGeminiClient,
+      getApprovalMode: () => ApprovalMode.DEFAULT,
       getUsageStatisticsEnabled: () => true,
       getDebugMode: () => false,
       addHistory: vi.fn(),
