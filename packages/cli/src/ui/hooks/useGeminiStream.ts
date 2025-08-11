@@ -26,6 +26,9 @@ import {
   UnauthorizedError,
   UserPromptEvent,
   DEFAULT_GEMINI_FLASH_MODEL,
+  logConvoFinishedEvent,
+  ConvoFinishedEvent,
+  ApprovalMode,
 } from '@google/gemini-cli-core';
 import { type Part, type PartListUnion, FinishReason } from '@google/genai';
 import {
@@ -212,6 +215,18 @@ export const useGeminiStream = (
     onCancelSubmit,
     pendingHistoryItemRef,
   ]);
+
+  useEffect(() => {
+    if (config.getApprovalMode() === ApprovalMode.YOLO && streamingState === StreamingState.Idle) {
+      const turnCount = history.length;
+      if (turnCount > 0) {
+        logConvoFinishedEvent(
+          config,
+          new ConvoFinishedEvent(config.getApprovalMode(), turnCount),
+        );
+      }
+    }
+  }, [streamingState, config, geminiClient]);
 
   useInput((_input, key) => {
     if (key.escape) {
