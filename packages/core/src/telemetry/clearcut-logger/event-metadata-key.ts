@@ -209,6 +209,16 @@ export enum EventMetadataKey {
 
   // Logs user removed lines in edit/write tool response.
   GEMINI_CLI_USER_REMOVED_LINES = 50,
+
+  // ==========================================================================
+  // Conversation Finished Event Keys
+  // ===========================================================================
+
+  // Logs the approval mode
+  GEMINI_CLI_APPROVAL_MODE = 51,
+
+  // Logs the number of turns
+  GEMINI_CLI_CONVO_TURN_COUNT = 52,
 }
 
 export function getEventMetadataKey(

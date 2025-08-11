@@ -22,6 +22,7 @@ import {
   SlashCommandEvent,
   MalformedJsonResponseEvent,
   IdeConnectionEvent,
+  ConvoFinishedEvent,
 } from '../types.js';
 import { EventMetadataKey } from './event-metadata-key.js';
 import { Config } from '../../config/config.js';
@@ -46,6 +47,7 @@ const next_speaker_check_event_name = 'next_speaker_check';
 const slash_command_event_name = 'slash_command';
 const malformed_json_response_event_name = 'malformed_json_response';
 const ide_connection_event_name = 'ide_connection';
+const convo_finished_event_name = 'convo_finished';
 
 export interface LogResponse {
   nextRequestWaitMs?: number;
@@ -715,6 +717,26 @@ export class ClearcutLogger {
     ];
 
     this.enqueueLogEvent(this.createLogEvent(ide_connection_event_name, data));
+    this.flushIfNeeded();
+  }
+
+  logConvoFinishedEvent(event: ConvoFinishedEvent): void {
+    const data: EventValue[] = [
+      {
+        gemini_cli_key: EventMetadataKey.GEMINI_CLI_SESSION_ID,
+        value: this.config?.getSessionId() ?? '',
+      },
+      {
+        gemini_cli_key: EventMetadataKey.GEMINI_CLI_CONVO_TURN_COUNT,
+        value: JSON.stringify(event.turnCount),
+      },
+      {
+        gemini_cli_key: EventMetadataKey.GEMINI_CLI_APPROVAL_MODE,
+        value: event.approvalMode,
+      },
+    ];
+
+    this.enqueueLogEvent(this.createLogEvent(convo_finished_event_name, data));
     this.flushIfNeeded();
   }
 
