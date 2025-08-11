@@ -441,7 +441,7 @@ export async function handleAtCommand({
             const filePathSpecInContent = match[1]; // This is a resolved pathSpec
             const fileActualContent = match[2].trim();
             processedQueryParts.push({
-              text: `\nContent from @${escapePath(filePathSpecInContent)}:\n`,
+              text: `\nContent from @${escapePath(normalizePath(filePathSpecInContent))}:\n`,
             });
             processedQueryParts.push({ text: fileActualContent });
           } else {
