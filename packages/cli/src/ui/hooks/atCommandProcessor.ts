@@ -230,7 +230,9 @@ export async function handleAtCommand({
           : reason === 'git'
             ? 'git-ignored'
             : 'gemini-ignored';
-      onDebugMessage(`Path ${pathName} is ${reasonText} and will be skipped.`);
+      onDebugMessage(
+        `Path ${escapePath(pathName)} is ${reasonText} and will be skipped.`,
+      );
       continue;
     }
 
