@@ -356,7 +356,7 @@ export async function handleAtCommand({
         ) {
           initialQueryText += ' ';
         }
-        initialQueryText += part.content;
+        initialQueryText += escapePath(part.content);
       }
     }
   }
