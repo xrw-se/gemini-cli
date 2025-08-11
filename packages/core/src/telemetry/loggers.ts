@@ -19,6 +19,7 @@ import {
   EVENT_NEXT_SPEAKER_CHECK,
   SERVICE_NAME,
   EVENT_SLASH_COMMAND,
+  EVENT_CONVO_FINISHED,
 } from './constants.js';
 import {
   ApiErrorEvent,
@@ -32,6 +33,7 @@ import {
   NextSpeakerCheckEvent,
   LoopDetectedEvent,
   SlashCommandEvent,
+  ConvoFinishedEvent,
 } from './types.js';
 import {
   recordApiErrorMetrics,
@@ -374,6 +376,27 @@ export function logIdeConnection(
   const logger = logs.getLogger(SERVICE_NAME);
   const logRecord: LogRecord = {
     body: `Ide connection. Type: ${event.connection_type}.`,
+    attributes,
+  };
+  logger.emit(logRecord);
+}
+
+export function logConvoFinishedEvent(
+  config: Config,
+  event: ConvoFinishedEvent,
+): void {
+  ClearcutLogger.getInstance(config)?.logConvoFinishedEvent(event);
+  if (!isTelemetrySdkInitialized()) return;
+
+  const attributes: LogAttributes = {
+    ...getCommonAttributes(config),
+    ...event,
+    'event.name': EVENT_CONVO_FINISHED,
+  };
+
+  const logger = logs.getLogger(SERVICE_NAME);
+  const logRecord: LogRecord = {
+    body: `Convo finished.`,
     attributes,
   };
   logger.emit(logRecord);

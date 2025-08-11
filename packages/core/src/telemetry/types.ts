@@ -5,7 +5,7 @@
  */
 
 import { GenerateContentResponseUsageMetadata } from '@google/genai';
-import { Config } from '../config/config.js';
+import { ApprovalMode, Config } from '../config/config.js';
 import { CompletedToolCall } from '../core/coreToolScheduler.js';
 import { FileDiff } from '../tools/tools.js';
 import { AuthType } from '../core/contentGenerator.js';
@@ -325,6 +325,20 @@ export class IdeConnectionEvent {
   }
 }
 
+export class ConvoFinishedEvent {
+  'event_name': 'convo_finished';
+  'event.timestamp': string; // ISO 8601;
+  approvalMode: ApprovalMode;
+  turnCount: number;
+
+  constructor(approvalMode: ApprovalMode, turnCount: number) {
+    this['event_name'] = 'convo_finished';
+    this['event.timestamp'] = new Date().toISOString();
+    this.approvalMode = approvalMode;
+    this.turnCount = turnCount;
+  }
+}
+
 export type TelemetryEvent =
   | StartSessionEvent
   | EndSessionEvent
@@ -338,4 +352,5 @@ export type TelemetryEvent =
   | NextSpeakerCheckEvent
   | SlashCommandEvent
   | MalformedJsonResponseEvent
-  | IdeConnectionEvent;
+  | IdeConnectionEvent
+  | ConvoFinishedEvent;
