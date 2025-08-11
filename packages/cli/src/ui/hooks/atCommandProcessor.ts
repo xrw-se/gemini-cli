@@ -246,17 +246,19 @@ export async function handleAtCommand({
           currentPathSpec =
             currentPathSpec + (pathName.endsWith(path.sep) ? `**` : `/**`);
           onDebugMessage(
-            `Path ${pathName} resolved to directory, using glob: ${currentPathSpec}`,
+            `Path ${escapePath(pathName)} resolved to directory, using glob: ${currentPathSpec}`,
           );
         } else {
-          onDebugMessage(`Path ${pathName} resolved to file: ${absolutePath}`);
+          onDebugMessage(
+            `Path ${currentPathSpec} resolved to file: ${absolutePath}`,
+          );
         }
         resolvedSuccessfully = true;
       } catch (error) {
         if (isNodeError(error) && error.code === 'ENOENT') {
           if (config.getEnableRecursiveFileSearch() && globTool) {
             onDebugMessage(
-              `Path ${pathName} not found directly, attempting glob search.`,
+              `Path ${currentPathSpec} not found directly, attempting glob search.`,
             );
             try {
               const globResult = await globTool.buildAndExecute(
@@ -277,45 +279,45 @@ export async function handleAtCommand({
                   const firstMatchAbsolute = lines[1].trim();
                   currentPathSpec = path.relative(dir, firstMatchAbsolute);
                   onDebugMessage(
-                    `Glob search for ${pathName} found ${firstMatchAbsolute}, using relative path: ${currentPathSpec}`,
+                    `Glob search for ${currentPathSpec} found ${firstMatchAbsolute}, using relative path: ${currentPathSpec}`,
                   );
                   resolvedSuccessfully = true;
                 } else {
                   onDebugMessage(
-                    `Glob search for '**/*${pathName}*' did not return a usable path. Path ${pathName} will be skipped.`,
+                    `Glob search for '**/*${currentPathSpec}*' did not return a usable path. Path ${currentPathSpec} will be skipped.`,
                   );
                 }
               } else {
                 onDebugMessage(
-                  `Glob search for '**/*${pathName}*' found no files or an error. Path ${pathName} will be skipped.`,
+                  `Glob search for '**/*${currentPathSpec}*' found no files or an error. Path ${currentPathSpec} will be skipped.`,
                 );
               }
             } catch (globError) {
               console.error(
-                `Error during glob search for ${pathName}: ${getErrorMessage(globError)}`,
+                `Error during glob search for ${currentPathSpec}: ${getErrorMessage(globError)}`,
               );
               onDebugMessage(
-                `Error during glob search for ${pathName}. Path ${pathName} will be skipped.`,
+                `Error during glob search for ${currentPathSpec}. Path ${currentPathSpec} will be skipped.`,
               );
             }
           } else {
             onDebugMessage(
-              `Glob tool not found. Path ${pathName} will be skipped.`,
+              `Glob tool not found. Path ${currentPathSpec} will be skipped.`,
             );
           }
         } else {
           console.error(
-            `Error stating path ${pathName}: ${getErrorMessage(error)}`,
+            `Error stating path ${currentPathSpec}: ${getErrorMessage(error)}`,
           );
           onDebugMessage(
-            `Error stating path ${pathName}. Path ${pathName} will be skipped.`,
+            `Error stating path ${currentPathSpec}. Path ${currentPathSpec} will be skipped.`,
           );
         }
       }
       if (resolvedSuccessfully) {
         pathSpecsToRead.push(currentPathSpec);
         atPathToResolvedSpecMap.set(originalAtPath, currentPathSpec);
-        contentLabelsForDisplay.push(pathName);
+        contentLabelsForDisplay.push(currentPathSpec);
         break;
       }
     }
