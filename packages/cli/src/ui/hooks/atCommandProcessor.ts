@@ -14,6 +14,7 @@ import {
   isNodeError,
   normalizePath,
   unescapePath,
+  escapePath,
 } from '@google/gemini-cli-core';
 import {
   HistoryItem,
@@ -234,14 +235,14 @@ export async function handleAtCommand({
     }
 
     for (const dir of config.getWorkspaceContext().getDirectories()) {
-      let currentPathSpec = pathName;
+      let currentPathSpec = escapePath(pathName);
       let resolvedSuccessfully = false;
       try {
         const absolutePath = path.resolve(dir, pathName);
         const stats = await fs.stat(absolutePath);
         if (stats.isDirectory()) {
           currentPathSpec =
-            pathName + (pathName.endsWith(path.sep) ? `**` : `/**`);
+            currentPathSpec + (pathName.endsWith(path.sep) ? `**` : `/**`);
           onDebugMessage(
             `Path ${pathName} resolved to directory, using glob: ${currentPathSpec}`,
           );
@@ -258,7 +259,7 @@ export async function handleAtCommand({
             try {
               const globResult = await globTool.buildAndExecute(
                 {
-                  pattern: `**/*${pathName}*`,
+                  pattern: `**/*${currentPathSpec}*`,
                   path: dir,
                 },
                 signal,
@@ -440,7 +441,7 @@ export async function handleAtCommand({
             const filePathSpecInContent = match[1]; // This is a resolved pathSpec
             const fileActualContent = match[2].trim();
             processedQueryParts.push({
-              text: `\nContent from @${filePathSpecInContent}:\n`,
+              text: `\nContent from @${escapePath(filePathSpecInContent)}:\n`,
             });
             processedQueryParts.push({ text: fileActualContent });
           } else {

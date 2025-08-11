@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import ignore, { type Ignore } from 'ignore';
 import { isGitRepository } from './gitUtils.js';
+import { normalizePath } from './paths.js';
 
 export interface GitIgnoreFilter {
   isIgnored(filePath: string): boolean;
@@ -64,7 +65,7 @@ export class GitIgnoreParser implements GitIgnoreFilter {
       return false;
     }
 
-    return this.ig.ignores(relativePath);
+    return this.ig.ignores(normalizePath(relativePath));
   }
 
   getPatterns(): string[] {
