@@ -223,7 +223,7 @@ export async function handleAtCommand({
     if (gitIgnored || geminiIgnored) {
       const reason =
         gitIgnored && geminiIgnored ? 'both' : gitIgnored ? 'git' : 'gemini';
-      ignoredByReason[reason].push(pathName);
+      ignoredByReason[reason].push(escapePath(pathName));
       const reasonText =
         reason === 'both'
           ? 'ignored by both git and gemini'
