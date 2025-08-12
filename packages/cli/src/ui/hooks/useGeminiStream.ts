@@ -186,6 +186,21 @@ export const useGeminiStream = (
     return StreamingState.Idle;
   }, [isResponding, toolCalls]);
 
+  useEffect(() => {
+    if (
+      config.getApprovalMode() === ApprovalMode.YOLO &&
+      streamingState === StreamingState.Idle
+    ) {
+      const turnCount = history.length;
+      if (turnCount > 0) {
+        logConvoFinishedEvent(
+          config,
+          new ConvoFinishedEvent(config.getApprovalMode(), turnCount),
+        );
+      }
+    }
+  }, [streamingState, config, history.length]);
+
   const cancelOngoingRequest = useCallback(() => {
     if (streamingState !== StreamingState.Responding) {
       return;
