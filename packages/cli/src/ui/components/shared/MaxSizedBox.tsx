@@ -32,7 +32,21 @@ export const KEYWORDS_TEXT_INK = [
   'isPrototypeOf',
   'propertyIsEnumerable',
   'toLocaleString',
+  '__proto__',
 ];
+
+/* 
+  When <Text>'string'</Text> is stored in const visibleLines and is printed inside a <Box>.
+  The string becomes a children prop of Text node. This causes issues with printing keywords. 
+  This function appends a zero-width space(\u200B) to the keyword so that it escapes misinterpretation.
+  */
+function handleKeywordsForTextComponent(text: string) {
+  if (KEYWORDS_TEXT_INK.includes(text)) {
+    return text + '\u200B';
+  } else {
+    return text;
+  }
+}
 
 function debugReportError(message: string, element: React.ReactNode) {
   if (!enableDebugLog) return;
@@ -171,19 +185,6 @@ export const MaxSizedBox: React.FC<MaxSizedBoxProps> = ({
       removeOverflowingId?.(id);
     };
   }, [id, totalHiddenLines, addOverflowingId, removeOverflowingId]);
-
-  /* 
-    When <Text>'string'</Text> is stored in const visibleLines and is printed inside a <Box>.
-    The string becomes a children prop of Text node. This causes issues with printing keywords. 
-    This function appends a zero-width space(\u200B) to the keyword so that it escapes misinterpretation.
-    */
-  function handleKeywordsForTextComponent(text: string) {
-    if (KEYWORDS_TEXT_INK.includes(text)) {
-      return text + '\u200B';
-    } else {
-      return text;
-    }
-  }
 
   const visibleStyledText =
     hiddenLinesCount > 0
