@@ -231,21 +231,6 @@ export const useGeminiStream = (
     pendingHistoryItemRef,
   ]);
 
-  useEffect(() => {
-    if (
-      config.getApprovalMode() === ApprovalMode.YOLO &&
-      streamingState === StreamingState.Idle
-    ) {
-      const turnCount = history.length;
-      if (turnCount > 0) {
-        logConvoFinishedEvent(
-          config,
-          new ConvoFinishedEvent(config.getApprovalMode(), turnCount),
-        );
-      }
-    }
-  }, [streamingState, config, history.length]);
-
   useInput((_input, key) => {
     if (key.escape) {
       cancelOngoingRequest();
