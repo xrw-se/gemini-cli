@@ -40,7 +40,9 @@ export function getInstallationInfo(
   try {
     // Normalize path separators to forward slashes for consistent matching.
     const realPath = normalizePath(fs.realpathSync(cliPath));
-    const normalizedProjectRoot = projectRoot ? normalizePath(projectRoot) : undefined;
+    const normalizedProjectRoot = projectRoot
+      ? normalizePath(projectRoot)
+      : undefined;
     const isGit = isGitRepository(process.cwd());
 
     // Check for local git clone first
