@@ -209,7 +209,7 @@ export const useGeminiStream = (
         );
       }
     }
-  }, [streamingState]);
+  }, [streamingState, config, history]);
 
   const cancelOngoingRequest = useCallback(() => {
     if (streamingState !== StreamingState.Responding) {
