@@ -24,6 +24,16 @@ export function setMaxSizedBoxDebugging(value: boolean) {
   enableDebugLog = value;
 }
 
+export const KEYWORDS_TEXT_INK = [
+  'constructor',
+  'toString',
+  'valueOf',
+  'hasOwnProperty',
+  'isPrototypeOf',
+  'propertyIsEnumerable',
+  'toLocaleString',
+];
+
 function debugReportError(message: string, element: React.ReactNode) {
   if (!enableDebugLog) return;
 
@@ -162,6 +172,19 @@ export const MaxSizedBox: React.FC<MaxSizedBoxProps> = ({
     };
   }, [id, totalHiddenLines, addOverflowingId, removeOverflowingId]);
 
+  /* 
+    When <Text>'string'</Text> is stored in const visibleLines and is printed inside a <Box>.
+    The string becomes a children prop of Text node. This causes issues with printing keywords. 
+    This function appends a zero-width space(\u200B) to the keyword so that it escapes misinterpretation.
+    */
+  function handleKeywordsForTextComponent(text: string) {
+    if (KEYWORDS_TEXT_INK.includes(text)) {
+      return text + '\u200B';
+    } else {
+      return text;
+    }
+  }
+
   const visibleStyledText =
     hiddenLinesCount > 0
       ? overflowDirection === 'top'
@@ -174,7 +197,7 @@ export const MaxSizedBox: React.FC<MaxSizedBoxProps> = ({
       {line.length > 0 ? (
         line.map((segment, segIndex) => (
           <Text key={segIndex} {...segment.props}>
-            {segment.text}
+            {handleKeywordsForTextComponent(segment.text)}
           </Text>
         ))
       ) : (

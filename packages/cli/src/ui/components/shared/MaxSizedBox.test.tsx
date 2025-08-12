@@ -6,7 +6,11 @@
 
 import { render } from 'ink-testing-library';
 import { OverflowProvider } from '../../contexts/OverflowContext.js';
-import { MaxSizedBox, setMaxSizedBoxDebugging } from './MaxSizedBox.js';
+import {
+  KEYWORDS_TEXT_INK,
+  MaxSizedBox,
+  setMaxSizedBoxDebugging,
+} from './MaxSizedBox.js';
 import { Box, Text } from 'ink';
 import { describe, it, expect } from 'vitest';
 
@@ -421,5 +425,24 @@ Line 3 direct child`);
     ].join('\n');
 
     expect(lastFrame()).equals(expected);
+  });
+
+  test.each(KEYWORDS_TEXT_INK)('should render the %s keyword', (keyword) => {
+    const box = (
+      <Box>
+        <Text>{keyword}</Text>
+      </Box>
+    );
+    const { lastFrame } = render(
+      <OverflowProvider>
+        <MaxSizedBox maxHeight={10} maxWidth={100}>
+          <Box>
+            <Text>class MyClass</Text>
+          </Box>
+          {box}
+        </MaxSizedBox>
+      </OverflowProvider>,
+    );
+    expect(lastFrame()).toContain(keyword);
   });
 });
