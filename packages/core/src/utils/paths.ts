@@ -168,11 +168,15 @@ export function normalizePath(filePath: string): string {
     if (char === '\\') {
       const nextChar = filePath[i + 1];
 
-      // If the backslash is escaping a shell special character, keep it
-      if (nextChar && SHELL_SPECIAL_CHARS.test(nextChar)) {
-        result += char; // Keep the backslash for escaping
+      // If the backslash is escaping a shell special character or another backslash, keep them both.
+      if (
+        nextChar &&
+        (SHELL_SPECIAL_CHARS.test(nextChar) || nextChar === '\\')
+      ) {
+        result += char + nextChar;
+        i++; // Advance index to skip the escaped character
       } else {
-        // Convert path separator backslash to forward slash
+        // Otherwise, it's a path separator.
         result += '/';
       }
     } else {
