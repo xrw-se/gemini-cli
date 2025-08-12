@@ -191,7 +191,17 @@ export const useGeminiStream = (
       config.getApprovalMode() === ApprovalMode.YOLO &&
       streamingState === StreamingState.Idle
     ) {
-      const turnCount = history.length;
+      const lastUserMessage = [...history]
+        .reverse()
+        .find((item: HistoryItem) => item.type === MessageType.USER);
+
+      const lastUserMessageIndex = lastUserMessage
+        ? history.lastIndexOf(lastUserMessage)
+        : -1;
+
+      const turnCount =
+        lastUserMessageIndex === -1 ? 0 : history.length - lastUserMessageIndex;
+
       if (turnCount > 0) {
         logConvoFinishedEvent(
           config,
@@ -199,7 +209,7 @@ export const useGeminiStream = (
         );
       }
     }
-  }, [streamingState, config, history.length]);
+  }, [streamingState, config, history]);
 
   const cancelOngoingRequest = useCallback(() => {
     if (streamingState !== StreamingState.Responding) {
