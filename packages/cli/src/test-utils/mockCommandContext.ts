@@ -28,6 +28,11 @@ export const createMockCommandContext = (
   overrides: DeepPartial<CommandContext> = {},
 ): CommandContext => {
   const defaultMocks: CommandContext = {
+    invocation: {
+      raw: '',
+      name: '',
+      args: '',
+    },
     services: {
       config: null,
       settings: { merged: {} } as LoadedSettings,
@@ -46,8 +51,12 @@ export const createMockCommandContext = (
       setDebugMessage: vi.fn(),
       pendingItem: null,
       setPendingItem: vi.fn(),
+      loadHistory: vi.fn(),
+      toggleCorgiMode: vi.fn(),
+      toggleVimEnabled: vi.fn(),
     },
     session: {
+      sessionShellAllowlist: new Set<string>(),
       stats: {
         sessionStartTime: new Date(),
         lastPromptTokenCount: 0,
