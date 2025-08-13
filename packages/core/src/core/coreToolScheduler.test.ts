@@ -11,6 +11,7 @@ import {
   ToolCall,
   convertToFunctionResponse,
   truncateAndSaveToFile,
+  ContentType,
 } from './coreToolScheduler.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -818,7 +819,7 @@ describe('truncateAndSaveToFile', () => {
       largeContent,
       'test-call',
       tempDir,
-      'output',
+      ContentType.OUTPUT,
     );
 
     expect(result).toContain(
@@ -847,7 +848,7 @@ describe('truncateAndSaveToFile', () => {
       largeError,
       'error-call',
       tempDir,
-      'error',
+      ContentType.ERROR,
     );
 
     expect(result).toContain(

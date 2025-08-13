@@ -212,59 +212,53 @@ export function convertToFunctionResponse(
   );
 }
 
+export enum ContentType {
+  OUTPUT = 'output',
+  ERROR = 'error message',
+}
+
 export async function truncateAndSaveToFile(
   content: string,
   callId: string,
   projectTempDir: string,
-  contentType: 'output' | 'error' = 'output',
+  contentType: ContentType = ContentType.OUTPUT,
 ): Promise<string> {
   if (content.length <= TRUNCATION_THRESHOLD) {
     return content;
+  }
+
+  const lines = content.split('\n');
+  let truncatedContent: string;
+
+  // Determine the truncated content for display based on its structure.
+  if (lines.length > TRUNCATION_LINES) {
+    // Content has many lines; truncate by line count.
+    truncatedContent = lines.slice(-TRUNCATION_LINES).join('\n');
+  } else {
+    // Content has few lines (or one very long line); truncate by character count.
+    const maxChars = TRUNCATION_LINES * 80; // Approximate 80 chars per line
+    truncatedContent = content.slice(-maxChars);
   }
 
   try {
     const tempFilePath = path.join(projectTempDir, `${callId}.txt`);
     await fs.writeFile(tempFilePath, content);
 
-    const lines = content.split('\n');
-    const truncatedContent = lines.slice(-TRUNCATION_LINES).join('\n');
-    const contentLabel = contentType === 'error' ? 'error message' : 'output';
-    const linesLabel = contentType === 'error' ? 'error message' : 'output';
+    return `Tool ${contentType} was too large and has been truncated.
+The full ${contentType} has been saved to: ${tempFilePath}
 
-    return `Tool ${contentLabel} was too large and has been truncated.
-The full ${contentLabel} has been saved to: ${tempFilePath}
-
-To read the complete ${contentLabel}, use the read_file tool with the absolute file path above. For large files, you can use the offset and limit parameters to read specific sections:
+To read the complete ${contentType}, use the read_file tool with the absolute file path above. For large files, you can use the offset and limit parameters to read specific sections:
 - read_file tool with offset=0, limit=100 to see the first 100 lines
 - read_file tool with offset=N to skip N lines from the beginning
 - read_file tool with limit=M to read only M lines at a time
-This allows you to efficiently examine different parts of the ${contentLabel} without loading the entire file.
+This allows you to efficiently examine different parts of the ${contentType} without loading the entire file.
 
-Last ${TRUNCATION_LINES} lines of ${linesLabel}:
-...
-${truncatedContent}`;
+Last ${TRUNCATION_LINES} lines of ${contentType}:
+...\n${truncatedContent}`;
   } catch (_error) {
-    const lines = content.split('\n');
-    const contentLabel = contentType === 'error' ? 'error message' : 'output';
-    // If we have many lines, take the last TRUNCATION_LINES
-    if (lines.length > TRUNCATION_LINES) {
-      return (
-        lines.slice(-TRUNCATION_LINES).join('\n') +
-        `\n\n[Note: Could not save full ${contentLabel} to file]`
-      );
-    }
-
-    // If it's just one very long line, truncate by characters
-    const maxChars = TRUNCATION_LINES * 80; // Approximate 80 chars per line
-    if (content.length > maxChars) {
-      return (
-        content.slice(-maxChars) +
-        `\n\n[Note: Could not save full ${contentLabel} to file]`
-      );
-    }
-
-    // Content is small enough, return as-is with note
-    return content + `\n\n[Note: Could not save full ${contentLabel} to file]`;
+    return (
+      truncatedContent + `\n[Note: Could not save full ${contentType} to file]`
+    );
   }
 }
 
@@ -905,6 +899,7 @@ export class CoreToolScheduler {
                   llmContent,
                   callId,
                   projectTempDir,
+                  ContentType.OUTPUT,
                 );
               }
 
@@ -931,7 +926,7 @@ export class CoreToolScheduler {
                   errorMessage,
                   callId,
                   projectTempDir,
-                  'error',
+                  ContentType.ERROR,
                 );
               }
               const error = new Error(errorMessage);
