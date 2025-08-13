@@ -137,32 +137,41 @@ export type ToolCallsUpdateHandler = (toolCalls: ToolCall[]) => void;
 /**
  * Formats tool output for a Gemini FunctionResponse.
  */
-function createFunctionResponsePart(
+async function createFunctionResponsePart(
   callId: string,
   toolName: string,
   output: string,
-): Part {
+  projectTempDir: string,
+): Promise<Part> {
   return {
     functionResponse: {
       id: callId,
       name: toolName,
-      response: { output },
+      response: {
+        output: await truncateAndSaveToFile(output, callId, projectTempDir),
+      },
     },
   };
 }
 
-export function convertToFunctionResponse(
+export async function convertToFunctionResponse(
   toolName: string,
   callId: string,
   llmContent: PartListUnion,
-): PartListUnion {
+  projectTempDir: string,
+): Promise<PartListUnion> {
   const contentToProcess =
     Array.isArray(llmContent) && llmContent.length === 1
       ? llmContent[0]
       : llmContent;
 
   if (typeof contentToProcess === 'string') {
-    return createFunctionResponsePart(callId, toolName, contentToProcess);
+    return createFunctionResponsePart(
+      callId,
+      toolName,
+      contentToProcess,
+      projectTempDir,
+    );
   }
 
   if (Array.isArray(contentToProcess)) {
@@ -170,8 +179,9 @@ export function convertToFunctionResponse(
       callId,
       toolName,
       'Tool execution succeeded.',
+      projectTempDir,
     );
-    return [functionResponse, ...contentToProcess];
+    return [await functionResponse, ...contentToProcess];
   }
 
   // After this point, contentToProcess is a single Part object.
@@ -181,7 +191,12 @@ export function convertToFunctionResponse(
         getResponseTextFromParts(
           contentToProcess.functionResponse.response.content as Part[],
         ) || '';
-      return createFunctionResponsePart(callId, toolName, stringifiedOutput);
+      return createFunctionResponsePart(
+        callId,
+        toolName,
+        stringifiedOutput,
+        projectTempDir,
+      );
     }
     // It's a functionResponse that we should pass through as is.
     return contentToProcess;
@@ -196,12 +211,18 @@ export function convertToFunctionResponse(
       callId,
       toolName,
       `Binary content of type ${mimeType} was processed.`,
+      projectTempDir,
     );
-    return [functionResponse, contentToProcess];
+    return [await functionResponse, contentToProcess];
   }
 
   if (contentToProcess.text !== undefined) {
-    return createFunctionResponsePart(callId, toolName, contentToProcess.text);
+    return createFunctionResponsePart(
+      callId,
+      toolName,
+      contentToProcess.text,
+      projectTempDir,
+    );
   }
 
   // Default case for other kinds of parts.
@@ -209,19 +230,14 @@ export function convertToFunctionResponse(
     callId,
     toolName,
     'Tool execution succeeded.',
+    projectTempDir,
   );
-}
-
-export enum ContentType {
-  OUTPUT = 'output',
-  ERROR = 'error message',
 }
 
 export async function truncateAndSaveToFile(
   content: string,
   callId: string,
   projectTempDir: string,
-  contentType: ContentType = ContentType.OUTPUT,
 ): Promise<string> {
   if (content.length <= TRUNCATION_THRESHOLD) {
     return content;
@@ -244,21 +260,19 @@ export async function truncateAndSaveToFile(
     const tempFilePath = path.join(projectTempDir, `${callId}.txt`);
     await fs.writeFile(tempFilePath, content);
 
-    return `Tool ${contentType} was too large and has been truncated.
-The full ${contentType} has been saved to: ${tempFilePath}
+    return `Tool output was too large and has been truncated.
+The full output has been saved to: ${tempFilePath}
 
-To read the complete ${contentType}, use the read_file tool with the absolute file path above. For large files, you can use the offset and limit parameters to read specific sections:
+To read the complete output, use the read_file tool with the absolute file path above. For large files, you can use the offset and limit parameters to read specific sections:
 - read_file tool with offset=0, limit=100 to see the first 100 lines
 - read_file tool with offset=N to skip N lines from the beginning
 - read_file tool with limit=M to read only M lines at a time
-This allows you to efficiently examine different parts of the ${contentType} without loading the entire file.
+This allows you to efficiently examine different parts of the output without loading the entire file.
 
-Last ${TRUNCATION_LINES} lines of ${contentType}:
+Last ${TRUNCATION_LINES} lines of output:
 ...\n${truncatedContent}`;
   } catch (_error) {
-    return (
-      truncatedContent + `\n[Note: Could not save full ${contentType} to file]`
-    );
+    return truncatedContent + `\n[Note: Could not save full output to file]`;
   }
 }
 
@@ -888,25 +902,11 @@ export class CoreToolScheduler {
             }
 
             if (toolResult.error === undefined) {
-              let llmContent = toolResult.llmContent;
-              if (
-                typeof llmContent === 'string' &&
-                llmContent.length > TRUNCATION_THRESHOLD
-              ) {
-                const projectTempDir = this.config.getProjectTempDir();
-                await fs.mkdir(projectTempDir, { recursive: true });
-                llmContent = await truncateAndSaveToFile(
-                  llmContent,
-                  callId,
-                  projectTempDir,
-                  ContentType.OUTPUT,
-                );
-              }
-
-              const response = convertToFunctionResponse(
+              const response = await convertToFunctionResponse(
                 toolName,
                 callId,
-                llmContent,
+                toolResult.llmContent,
+                this.config.getProjectTempDir(),
               );
               const successResponse: ToolCallResponseInfo = {
                 callId,
@@ -918,18 +918,7 @@ export class CoreToolScheduler {
               this.setStatusInternal(callId, 'success', successResponse);
             } else {
               // It is a failure
-              let errorMessage = toolResult.error.message;
-              if (errorMessage.length > TRUNCATION_THRESHOLD) {
-                const projectTempDir = this.config.getProjectTempDir();
-                await fs.mkdir(projectTempDir, { recursive: true });
-                errorMessage = await truncateAndSaveToFile(
-                  errorMessage,
-                  callId,
-                  projectTempDir,
-                  ContentType.ERROR,
-                );
-              }
-              const error = new Error(errorMessage);
+              const error = new Error(toolResult.error.message);
               const errorResponse = createErrorResponse(
                 scheduledCall.request,
                 error,

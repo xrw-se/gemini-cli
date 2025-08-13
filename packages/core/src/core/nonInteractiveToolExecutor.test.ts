@@ -19,6 +19,7 @@ const mockConfig = {
   getSessionId: () => 'test-session-id',
   getUsageStatisticsEnabled: () => true,
   getDebugMode: () => false,
+  getProjectTempDir: () => '/tmp/test',
 } as unknown as Config;
 
 describe('executeToolCall', () => {

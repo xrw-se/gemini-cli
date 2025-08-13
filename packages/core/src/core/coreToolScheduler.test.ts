@@ -11,7 +11,6 @@ import {
   ToolCall,
   convertToFunctionResponse,
   truncateAndSaveToFile,
-  ContentType,
 } from './coreToolScheduler.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -210,6 +209,9 @@ describe('CoreToolScheduler with payload', () => {
       );
     }
 
+    // Wait for async operations to complete
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
     expect(onAllToolCallsComplete).toHaveBeenCalled();
     const completedCalls = onAllToolCallsComplete.mock
       .calls[0][0] as ToolCall[];
@@ -223,10 +225,16 @@ describe('CoreToolScheduler with payload', () => {
 describe('convertToFunctionResponse', () => {
   const toolName = 'testTool';
   const callId = 'call1';
+  const projectTempDir = '/tmp/test';
 
-  it('should handle simple string llmContent', () => {
+  it('should handle simple string llmContent', async () => {
     const llmContent = 'Simple text output';
-    const result = convertToFunctionResponse(toolName, callId, llmContent);
+    const result = await convertToFunctionResponse(
+      toolName,
+      callId,
+      llmContent,
+      projectTempDir,
+    );
     expect(result).toEqual({
       functionResponse: {
         name: toolName,
@@ -236,9 +244,14 @@ describe('convertToFunctionResponse', () => {
     });
   });
 
-  it('should handle llmContent as a single Part with text', () => {
+  it('should handle llmContent as a single Part with text', async () => {
     const llmContent: Part = { text: 'Text from Part object' };
-    const result = convertToFunctionResponse(toolName, callId, llmContent);
+    const result = await convertToFunctionResponse(
+      toolName,
+      callId,
+      llmContent,
+      projectTempDir,
+    );
     expect(result).toEqual({
       functionResponse: {
         name: toolName,
@@ -248,9 +261,14 @@ describe('convertToFunctionResponse', () => {
     });
   });
 
-  it('should handle llmContent as a PartListUnion array with a single text Part', () => {
+  it('should handle llmContent as a PartListUnion array with a single text Part', async () => {
     const llmContent: PartListUnion = [{ text: 'Text from array' }];
-    const result = convertToFunctionResponse(toolName, callId, llmContent);
+    const result = await convertToFunctionResponse(
+      toolName,
+      callId,
+      llmContent,
+      projectTempDir,
+    );
     expect(result).toEqual({
       functionResponse: {
         name: toolName,
@@ -260,11 +278,16 @@ describe('convertToFunctionResponse', () => {
     });
   });
 
-  it('should handle llmContent with inlineData', () => {
+  it('should handle llmContent with inlineData', async () => {
     const llmContent: Part = {
       inlineData: { mimeType: 'image/png', data: 'base64...' },
     };
-    const result = convertToFunctionResponse(toolName, callId, llmContent);
+    const result = await convertToFunctionResponse(
+      toolName,
+      callId,
+      llmContent,
+      projectTempDir,
+    );
     expect(result).toEqual([
       {
         functionResponse: {
@@ -279,11 +302,16 @@ describe('convertToFunctionResponse', () => {
     ]);
   });
 
-  it('should handle llmContent with fileData', () => {
+  it('should handle llmContent with fileData', async () => {
     const llmContent: Part = {
       fileData: { mimeType: 'application/pdf', fileUri: 'gs://...' },
     };
-    const result = convertToFunctionResponse(toolName, callId, llmContent);
+    const result = await convertToFunctionResponse(
+      toolName,
+      callId,
+      llmContent,
+      projectTempDir,
+    );
     expect(result).toEqual([
       {
         functionResponse: {
@@ -298,13 +326,18 @@ describe('convertToFunctionResponse', () => {
     ]);
   });
 
-  it('should handle llmContent as an array of multiple Parts (text and inlineData)', () => {
+  it('should handle llmContent as an array of multiple Parts (text and inlineData)', async () => {
     const llmContent: PartListUnion = [
       { text: 'Some textual description' },
       { inlineData: { mimeType: 'image/jpeg', data: 'base64data...' } },
       { text: 'Another text part' },
     ];
-    const result = convertToFunctionResponse(toolName, callId, llmContent);
+    const result = await convertToFunctionResponse(
+      toolName,
+      callId,
+      llmContent,
+      projectTempDir,
+    );
     expect(result).toEqual([
       {
         functionResponse: {
@@ -317,11 +350,16 @@ describe('convertToFunctionResponse', () => {
     ]);
   });
 
-  it('should handle llmContent as an array with a single inlineData Part', () => {
+  it('should handle llmContent as an array with a single inlineData Part', async () => {
     const llmContent: PartListUnion = [
       { inlineData: { mimeType: 'image/gif', data: 'gifdata...' } },
     ];
-    const result = convertToFunctionResponse(toolName, callId, llmContent);
+    const result = await convertToFunctionResponse(
+      toolName,
+      callId,
+      llmContent,
+      projectTempDir,
+    );
     expect(result).toEqual([
       {
         functionResponse: {
@@ -336,9 +374,14 @@ describe('convertToFunctionResponse', () => {
     ]);
   });
 
-  it('should handle llmContent as a generic Part (not text, inlineData, or fileData)', () => {
+  it('should handle llmContent as a generic Part (not text, inlineData, or fileData)', async () => {
     const llmContent: Part = { functionCall: { name: 'test', args: {} } };
-    const result = convertToFunctionResponse(toolName, callId, llmContent);
+    const result = await convertToFunctionResponse(
+      toolName,
+      callId,
+      llmContent,
+      projectTempDir,
+    );
     expect(result).toEqual({
       functionResponse: {
         name: toolName,
@@ -348,9 +391,14 @@ describe('convertToFunctionResponse', () => {
     });
   });
 
-  it('should handle empty string llmContent', () => {
+  it('should handle empty string llmContent', async () => {
     const llmContent = '';
-    const result = convertToFunctionResponse(toolName, callId, llmContent);
+    const result = await convertToFunctionResponse(
+      toolName,
+      callId,
+      llmContent,
+      projectTempDir,
+    );
     expect(result).toEqual({
       functionResponse: {
         name: toolName,
@@ -360,9 +408,14 @@ describe('convertToFunctionResponse', () => {
     });
   });
 
-  it('should handle llmContent as an empty array', () => {
+  it('should handle llmContent as an empty array', async () => {
     const llmContent: PartListUnion = [];
-    const result = convertToFunctionResponse(toolName, callId, llmContent);
+    const result = await convertToFunctionResponse(
+      toolName,
+      callId,
+      llmContent,
+      projectTempDir,
+    );
     expect(result).toEqual([
       {
         functionResponse: {
@@ -374,9 +427,14 @@ describe('convertToFunctionResponse', () => {
     ]);
   });
 
-  it('should handle llmContent as a Part with undefined inlineData/fileData/text', () => {
+  it('should handle llmContent as a Part with undefined inlineData/fileData/text', async () => {
     const llmContent: Part = {}; // An empty part object
-    const result = convertToFunctionResponse(toolName, callId, llmContent);
+    const result = await convertToFunctionResponse(
+      toolName,
+      callId,
+      llmContent,
+      projectTempDir,
+    );
     expect(result).toEqual({
       functionResponse: {
         name: toolName,
@@ -548,6 +606,7 @@ describe('CoreToolScheduler YOLO mode', () => {
       getUsageStatisticsEnabled: () => true,
       getDebugMode: () => false,
       getApprovalMode: () => ApprovalMode.YOLO,
+      getProjectTempDir: () => '/tmp/test',
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -570,6 +629,9 @@ describe('CoreToolScheduler YOLO mode', () => {
 
     // Act
     await scheduler.schedule([request], abortController.signal);
+
+    // Wait for async operations to complete
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
     // Assert
     // 1. The tool's execute method was called directly.
@@ -633,6 +695,7 @@ describe('CoreToolScheduler request queueing', () => {
       getUsageStatisticsEnabled: () => true,
       getDebugMode: () => false,
       getApprovalMode: () => ApprovalMode.YOLO, // Use YOLO to avoid confirmation prompts
+      getProjectTempDir: () => '/tmp/test',
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -685,13 +748,23 @@ describe('CoreToolScheduler request queueing', () => {
       returnDisplay: 'First call complete',
     });
 
+    // Wait for async operations to complete
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
     // Wait for the second schedule promise to resolve.
     await schedulePromise2;
 
     // Wait for the second call to be in the 'executing' state.
     await vi.waitFor(() => {
-      const calls = onToolCallsUpdate.mock.calls.at(-1)?.[0] as ToolCall[];
-      expect(calls?.[0]?.status).toBe('executing');
+      const allCalls = onToolCallsUpdate.mock.calls;
+      // Find the call with callId '2' in 'executing' state
+      const secondCallUpdate = allCalls.find((call) => {
+        const toolCalls = call[0] as ToolCall[];
+        return toolCalls.some(
+          (tc) => tc.request.callId === '2' && tc.status === 'executing',
+        );
+      });
+      expect(secondCallUpdate).toBeDefined();
     });
 
     // Now the second tool call should have been executed.
@@ -706,6 +779,9 @@ describe('CoreToolScheduler request queueing', () => {
     // Since the mock is shared, we need to resolve the current promise.
     // In a real scenario, a new promise would be created for the second call.
     resolveFirstCall!(secondCallResult);
+
+    // Wait for async operations to complete
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
     // Wait for the second completion.
     await vi.waitFor(() => {
@@ -742,6 +818,7 @@ describe('CoreToolScheduler request queueing', () => {
       getUsageStatisticsEnabled: () => true,
       getDebugMode: () => false,
       getApprovalMode: () => ApprovalMode.YOLO,
+      getProjectTempDir: () => '/tmp/test',
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -782,6 +859,9 @@ describe('CoreToolScheduler request queueing', () => {
     // Wait for both promises to resolve.
     await Promise.all([schedulePromise1, schedulePromise2]);
 
+    // Wait for async operations to complete
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
     // Ensure the tool was called twice with the correct arguments.
     expect(mockTool.executeFn).toHaveBeenCalledTimes(2);
     expect(mockTool.executeFn).toHaveBeenCalledWith({ a: 1 });
@@ -819,7 +899,6 @@ describe('truncateAndSaveToFile', () => {
       largeContent,
       'test-call',
       tempDir,
-      ContentType.OUTPUT,
     );
 
     expect(result).toContain(
@@ -848,14 +927,13 @@ describe('truncateAndSaveToFile', () => {
       largeError,
       'error-call',
       tempDir,
-      ContentType.ERROR,
     );
 
     expect(result).toContain(
-      'Tool error message was too large and has been truncated',
+      'Tool output was too large and has been truncated',
     );
-    expect(result).toContain('The full error message has been saved to:');
-    expect(result).toContain('Last 100 lines of error message:');
+    expect(result).toContain('The full output has been saved to:');
+    expect(result).toContain('Last 100 lines of output:');
 
     // Check that file was created
     const files = await fs.readdir(tempDir);

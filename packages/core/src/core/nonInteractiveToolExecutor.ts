@@ -111,10 +111,11 @@ export async function executeToolCall(
       decision: ToolCallDecision.AUTO_ACCEPT,
     });
 
-    const response = convertToFunctionResponse(
+    const response = await convertToFunctionResponse(
       toolCallRequest.name,
       toolCallRequest.callId,
       tool_output,
+      config.getProjectTempDir(),
     );
 
     return {
