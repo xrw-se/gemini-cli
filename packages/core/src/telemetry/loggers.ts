@@ -33,7 +33,8 @@ import {
   NextSpeakerCheckEvent,
   LoopDetectedEvent,
   SlashCommandEvent,
-  ConvoFinishedEvent,
+  ConversationFinishedEvent,
+  KittySequenceOverflowEvent,
 } from './types.js';
 import {
   recordApiErrorMetrics,
@@ -397,6 +398,24 @@ export function logConversationFinishedEvent(
   const logger = logs.getLogger(SERVICE_NAME);
   const logRecord: LogRecord = {
     body: `Convo finished.`,
+    attributes,
+  };
+  logger.emit(logRecord);
+}
+
+export function logKittySequenceOverflow(
+  config: Config,
+  event: KittySequenceOverflowEvent,
+): void {
+  ClearcutLogger.getInstance(config)?.logKittySequenceOverflowEvent(event);
+  if (!isTelemetrySdkInitialized()) return;
+  const attributes: LogAttributes = {
+    ...getCommonAttributes(config),
+    ...event,
+  };
+  const logger = logs.getLogger(SERVICE_NAME);
+  const logRecord: LogRecord = {
+    body: `Kitty sequence buffer overflow: ${event.sequence_length} bytes`,
     attributes,
   };
   logger.emit(logRecord);
