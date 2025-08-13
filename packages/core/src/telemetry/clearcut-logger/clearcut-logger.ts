@@ -688,10 +688,12 @@ export class ClearcutLogger {
       },
     ];
 
-    this.enqueueLogEvent(this.createLogEvent(conversation_finished_event_name, data));
+    this.enqueueLogEvent(
+      this.createLogEvent(conversation_finished_event_name, data),
+    );
     this.flushIfNeeded();
   }
-  
+
   logKittySequenceOverflowEvent(event: KittySequenceOverflowEvent): void {
     const data: EventValue[] = [
       {

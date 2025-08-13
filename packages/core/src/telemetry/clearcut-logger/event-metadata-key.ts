@@ -209,7 +209,7 @@ export enum EventMetadataKey {
 
   // Logs user removed lines in edit/write tool response.
   GEMINI_CLI_USER_REMOVED_LINES = 50,
-  
+
   // ==========================================================================
   // Kitty Sequence Overflow Event Keys
   // ===========================================================================
