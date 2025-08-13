@@ -720,14 +720,14 @@ export class ClearcutLogger {
     this.flushIfNeeded();
   }
 
-  logConvoFinishedEvent(event: ConvoFinishedEvent): void {
+  logConversationFinishedEvent(event: ConvoFinishedEvent): void {
     const data: EventValue[] = [
       {
         gemini_cli_key: EventMetadataKey.GEMINI_CLI_SESSION_ID,
         value: this.config?.getSessionId() ?? '',
       },
       {
-        gemini_cli_key: EventMetadataKey.GEMINI_CLI_CONVO_TURN_COUNT,
+        gemini_cli_key: EventMetadataKey.GEMINI_CLI_CONVERSATION_TURN_COUNT,
         value: JSON.stringify(event.turnCount),
       },
       {

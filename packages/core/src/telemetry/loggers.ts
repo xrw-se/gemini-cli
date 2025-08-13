@@ -19,7 +19,7 @@ import {
   EVENT_NEXT_SPEAKER_CHECK,
   SERVICE_NAME,
   EVENT_SLASH_COMMAND,
-  EVENT_CONVO_FINISHED,
+  EVENT_CONVERSATION_FINISHED,
 } from './constants.js';
 import {
   ApiErrorEvent,
@@ -381,17 +381,17 @@ export function logIdeConnection(
   logger.emit(logRecord);
 }
 
-export function logConvoFinishedEvent(
+export function logConversationFinishedEvent(
   config: Config,
   event: ConvoFinishedEvent,
 ): void {
-  ClearcutLogger.getInstance(config)?.logConvoFinishedEvent(event);
+  ClearcutLogger.getInstance(config)?.logConversationFinishedEvent(event);
   if (!isTelemetrySdkInitialized()) return;
 
   const attributes: LogAttributes = {
     ...getCommonAttributes(config),
     ...event,
-    'event.name': EVENT_CONVO_FINISHED,
+    'event.name': EVENT_CONVERSATION_FINISHED,
   };
 
   const logger = logs.getLogger(SERVICE_NAME);

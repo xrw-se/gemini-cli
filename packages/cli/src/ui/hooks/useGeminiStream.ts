@@ -26,7 +26,7 @@ import {
   UnauthorizedError,
   UserPromptEvent,
   DEFAULT_GEMINI_FLASH_MODEL,
-  logConvoFinishedEvent,
+  logConversationFinishedEvent,
   ConvoFinishedEvent,
   ApprovalMode,
 } from '@google/gemini-cli-core';
@@ -203,7 +203,7 @@ export const useGeminiStream = (
         lastUserMessageIndex === -1 ? 0 : history.length - lastUserMessageIndex;
 
       if (turnCount > 0) {
-        logConvoFinishedEvent(
+        logConversationFinishedEvent(
           config,
           new ConvoFinishedEvent(config.getApprovalMode(), turnCount),
         );

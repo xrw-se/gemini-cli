@@ -27,7 +27,7 @@ export {
   logApiResponse,
   logFlashFallback,
   logSlashCommand,
-  logConvoFinishedEvent,
+  logConversationFinishedEvent,
 } from './loggers.js';
 export {
   StartSessionEvent,
