@@ -325,14 +325,14 @@ export class IdeConnectionEvent {
   }
 }
 
-export class ConvoFinishedEvent {
-  'event_name': 'convo_finished';
+export class ConversationFinishedEvent {
+  'event_name': 'conversation_finished';
   'event.timestamp': string; // ISO 8601;
   approvalMode: ApprovalMode;
   turnCount: number;
 
   constructor(approvalMode: ApprovalMode, turnCount: number) {
-    this['event_name'] = 'convo_finished';
+    this['event_name'] = 'conversation_finished';
     this['event.timestamp'] = new Date().toISOString();
     this.approvalMode = approvalMode;
     this.turnCount = turnCount;
@@ -367,5 +367,5 @@ export type TelemetryEvent =
   | SlashCommandEvent
   | MalformedJsonResponseEvent
   | IdeConnectionEvent
-  | ConvoFinishedEvent
+  | ConversationFinishedEvent
   | KittySequenceOverflowEvent;

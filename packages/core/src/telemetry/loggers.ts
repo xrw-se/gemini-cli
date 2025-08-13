@@ -384,7 +384,7 @@ export function logIdeConnection(
 
 export function logConversationFinishedEvent(
   config: Config,
-  event: ConvoFinishedEvent,
+  event: ConversationFinishedEvent,
 ): void {
   ClearcutLogger.getInstance(config)?.logConversationFinishedEvent(event);
   if (!isTelemetrySdkInitialized()) return;
@@ -397,7 +397,7 @@ export function logConversationFinishedEvent(
 
   const logger = logs.getLogger(SERVICE_NAME);
   const logRecord: LogRecord = {
-    body: `Convo finished.`,
+    body: `Conversation finished.`,
     attributes,
   };
   logger.emit(logRecord);

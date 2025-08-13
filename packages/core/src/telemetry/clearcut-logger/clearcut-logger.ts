@@ -19,7 +19,7 @@ import {
   SlashCommandEvent,
   MalformedJsonResponseEvent,
   IdeConnectionEvent,
-  ConvoFinishedEvent,
+  ConversationFinishedEvent,
   KittySequenceOverflowEvent,
 } from '../types.js';
 import { EventMetadataKey } from './event-metadata-key.js';

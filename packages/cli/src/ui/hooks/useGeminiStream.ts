@@ -26,7 +26,7 @@ import {
   UserPromptEvent,
   DEFAULT_GEMINI_FLASH_MODEL,
   logConversationFinishedEvent,
-  ConvoFinishedEvent,
+  ConversationFinishedEvent,
   ApprovalMode,
   parseAndFormatApiError,
 } from '@google/gemini-cli-core';
@@ -205,7 +205,7 @@ export const useGeminiStream = (
       if (turnCount > 0) {
         logConversationFinishedEvent(
           config,
-          new ConvoFinishedEvent(config.getApprovalMode(), turnCount),
+          new ConversationFinishedEvent(config.getApprovalMode(), turnCount),
         );
       }
     }
