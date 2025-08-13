@@ -234,10 +234,10 @@ export async function truncateAndSaveToFile(
     return `Tool ${contentLabel} was too large and has been truncated.
 The full ${contentLabel} has been saved to: ${tempFilePath}
 
-To read the complete ${contentLabel}, use the Read tool with the file path above. For large files, you can use the offset and limit parameters to read specific sections:
-- Read tool with offset=0, limit=100 to see the first 100 lines
-- Read tool with offset=N to skip N lines from the beginning
-- Read tool with limit=M to read only M lines at a time
+To read the complete ${contentLabel}, use the read_file tool with the absolute file path above. For large files, you can use the offset and limit parameters to read specific sections:
+- read_file tool with offset=0, limit=100 to see the first 100 lines
+- read_file tool with offset=N to skip N lines from the beginning
+- read_file tool with limit=M to read only M lines at a time
 This allows you to efficiently examine different parts of the ${contentLabel} without loading the entire file.
 
 Last ${TRUNCATION_LINES} lines of ${linesLabel}:
