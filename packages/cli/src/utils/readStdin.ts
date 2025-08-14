@@ -20,8 +20,8 @@ export async function readStdin(): Promise<string> {
           console.warn(
             `Warning: stdin input truncated to ${MAX_STDIN_SIZE} bytes.`,
           );
-          process.stdin.destroy(); // Stop reading further
-          break;
+process.stdin.destroy(); // Stop reading further
+return process.stdin.emit('end');
         }
         data += chunk;
         totalSize += chunk.length;
