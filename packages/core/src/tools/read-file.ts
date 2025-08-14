@@ -180,8 +180,11 @@ export class ReadFileTool extends BaseDeclarativeTool<
 
     const workspaceContext = this.config.getWorkspaceContext();
     const projectTempDir = this.config.getProjectTempDir();
-    
-    if (!workspaceContext.isPathWithinWorkspace(filePath) && !filePath.startsWith(projectTempDir)) {
+
+    if (
+      !workspaceContext.isPathWithinWorkspace(filePath) &&
+      !filePath.startsWith(projectTempDir)
+    ) {
       const directories = workspaceContext.getDirectories();
       return `File path must be within one of the workspace directories: ${directories.join(', ')} or within the project temp directory: ${projectTempDir}`;
     }
