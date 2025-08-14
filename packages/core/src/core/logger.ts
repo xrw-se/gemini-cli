@@ -238,8 +238,19 @@ export class Logger {
     if (!this.geminiDir) {
       throw new Error('Checkpoint file path not set.');
     }
-    // Sanitize tag to prevent directory traversal attacks
-    let sanitizedTag = tag.replace(/[^a-zA-Z0-9-_]/g, '');
+    // Sanitize tag to prevent directory traversal.
+    // The primary defense is using path.join, which handles path resolution.
+    // We'll also encode characters that are problematic for file systems or shells.
+    let sanitizedTag = tag
+      .replace(/\//g, '%2F') // Forward slash
+      .replace(/\\/g, '%5C') // Backslash
+      .replace(/:/g, '%3A') // Colon
+      .replace(/\*/g, '%2A') // Asterisk
+      .replace(/\?/g, '%3F') // Question mark
+      .replace(/"/g, '%22') // Double quote
+      .replace(/</g, '%3C') // Less than
+      .replace(/>/g, '%3E') // Greater than
+      .replace(/\|/g, '%7C'); // Pipe
     if (!sanitizedTag) {
       sanitizedTag = 'default';
     }

@@ -395,9 +395,15 @@ describe('Logger', () => {
 
     it.each([
       { tag: 'test-tag', sanitizedTag: 'test-tag' },
-      { tag: 'invalid/?*!', sanitizedTag: 'invalid' },
-      { tag: '/?*!', sanitizedTag: 'default' },
-      { tag: '../../secret', sanitizedTag: 'secret' },
+      {
+        tag: 'invalid/?*!',
+        sanitizedTag: 'invalid%2F%3F%2A!',
+      },
+      { tag: '/?*!', sanitizedTag: '%2F%3F%2A!' },
+      {
+        tag: '../../secret',
+        sanitizedTag: '..%2F..%2Fsecret',
+      },
     ])('should save a checkpoint', async ({ tag, sanitizedTag }) => {
       await logger.saveCheckpoint(conversation, tag);
       const taggedFilePath = path.join(
@@ -439,9 +445,15 @@ describe('Logger', () => {
 
     it.each([
       { tag: 'load-tag', sanitizedTag: 'load-tag' },
-      { tag: 'inv/load?*!', sanitizedTag: 'invload' },
-      { tag: '/?*!', sanitizedTag: 'default' },
-      { tag: '../../secret', sanitizedTag: 'secret' },
+      {
+        tag: 'inv/load?*!',
+        sanitizedTag: 'inv%2Fload%3F%2A!',
+      },
+      { tag: '/?*!', sanitizedTag: '%2F%3F%2A!' },
+      {
+        tag: '../../secret',
+        sanitizedTag: '..%2F..%2Fsecret',
+      },
     ])('should load from a checkpoint', async ({ tag, sanitizedTag }) => {
       const taggedConversation = [
         ...conversation,
