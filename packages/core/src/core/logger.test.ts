@@ -458,6 +458,10 @@ describe('Logger', () => {
         tag: '../../secret',
         sanitizedTag: '..%2F..%2Fsecret',
       },
+      {
+        tag: '叉烧たこ焼きحُمُّص',
+        sanitizedTag: '叉烧たこ焼きحُمُّص',
+      },
     ])('should load from a checkpoint', async ({ tag, sanitizedTag }) => {
       const taggedConversation = [
         ...conversation,
