@@ -407,7 +407,7 @@ describe('Logger', () => {
       {
         tag: '叉烧たこ焼きحُمُّص',
         sanitizedTag: '叉烧たこ焼きحُمُّص',
-      }
+      },
     ])('should save a checkpoint', async ({ tag, sanitizedTag }) => {
       await logger.saveCheckpoint(conversation, tag);
       const taggedFilePath = path.join(
