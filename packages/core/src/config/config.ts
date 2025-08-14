@@ -198,6 +198,7 @@ export interface ConfigParameters {
   chatCompression?: ChatCompressionSettings;
   interactive?: boolean;
   trustedFolder?: boolean;
+  enablePromptCompletion?: boolean;
 }
 
 export class Config {
@@ -262,6 +263,7 @@ export class Config {
   private readonly chatCompression: ChatCompressionSettings | undefined;
   private readonly interactive: boolean;
   private readonly trustedFolder: boolean | undefined;
+  private readonly enablePromptCompletion: boolean = false;
   private initialized: boolean = false;
 
   constructor(params: ConfigParameters) {
@@ -327,6 +329,7 @@ export class Config {
     this.chatCompression = params.chatCompression;
     this.interactive = params.interactive ?? false;
     this.trustedFolder = params.trustedFolder;
+    this.enablePromptCompletion = params.enablePromptCompletion ?? false;
 
     if (params.contextFileName) {
       setGeminiMdFilename(params.contextFileName);
@@ -703,6 +706,10 @@ export class Config {
 
   isInteractive(): boolean {
     return this.interactive;
+  }
+
+  getEnablePromptCompletion(): boolean {
+    return this.enablePromptCompletion;
   }
 
   async getGitService(): Promise<GitService> {
