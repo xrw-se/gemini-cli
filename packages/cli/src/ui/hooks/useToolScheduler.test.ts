@@ -55,6 +55,7 @@ const mockConfig = {
   getApprovalMode: vi.fn(() => ApprovalMode.DEFAULT),
   getUsageStatisticsEnabled: () => true,
   getDebugMode: () => false,
+  getProjectTempDir: () => '/tmp',
   getSessionId: () => 'test-session-id',
   getContentGeneratorConfig: () => ({
     model: 'test-model',
