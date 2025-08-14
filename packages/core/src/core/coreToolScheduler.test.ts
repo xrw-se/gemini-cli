@@ -1197,11 +1197,9 @@ describe('truncateAndSaveToFile', () => {
 
     const result = await truncateAndSaveToFile(content, callId, projectTempDir);
 
-    expect(result.outputFile).toBe('/custom/temp/dir/unique-call-123.txt');
-    expect(mockWriteFile).toHaveBeenCalledWith(
-      '/custom/temp/dir/unique-call-123.txt',
-      content,
-    );
+    const expectedPath = path.join(projectTempDir, `${callId}.txt`);
+    expect(result.outputFile).toBe(expectedPath);
+    expect(mockWriteFile).toHaveBeenCalledWith(expectedPath, content);
   });
 
   it('should include helpful instructions in truncated message', async () => {
