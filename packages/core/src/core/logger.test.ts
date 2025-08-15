@@ -395,15 +395,9 @@ describe('Logger', () => {
 
     it.each([
       { tag: 'test-tag', sanitizedTag: 'test-tag' },
-      {
-        tag: 'invalid/?*!',
-        sanitizedTag: 'invalid%2F%3F%2A!',
-      },
-      { tag: '/?*!', sanitizedTag: '%2F%3F%2A!' },
-      {
-        tag: '../../secret',
-        sanitizedTag: '..%2F..%2Fsecret',
-      },
+      { tag: 'invalid/?*!', sanitizedTag: 'invalid!' },
+      { tag: '\\./?*/?*', sanitizedTag: 'default' },
+      { tag: '../../secret', sanitizedTag: 'secret' },
       {
         tag: '叉烧たこ焼きحُمُّص',
         sanitizedTag: '叉烧たこ焼きحُمُّص',
@@ -449,15 +443,9 @@ describe('Logger', () => {
 
     it.each([
       { tag: 'load-tag', sanitizedTag: 'load-tag' },
-      {
-        tag: 'inv/load?*!',
-        sanitizedTag: 'inv%2Fload%3F%2A!',
-      },
-      { tag: '/?*!', sanitizedTag: '%2F%3F%2A!' },
-      {
-        tag: '../../secret',
-        sanitizedTag: '..%2F..%2Fsecret',
-      },
+      { tag: 'inv/load?*!', sanitizedTag: 'invload!' },
+      { tag: '\\./?*', sanitizedTag: 'default' },
+      { tag: '../../secret', sanitizedTag: 'secret' },
       {
         tag: '叉烧たこ焼きحُمُّص',
         sanitizedTag: '叉烧たこ焼きحُمُّص',

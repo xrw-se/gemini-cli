@@ -240,19 +240,9 @@ export class Logger {
     }
     // Sanitize tag to prevent directory traversal.
     // The primary defense is using path.join, which handles path resolution.
-    // We'll also encode characters that are problematic for file systems or shells.
+    // We'll also remove characters that are problematic for file systems or shells.
     // We normalize to handle full-width characters.
-    let sanitizedTag = tag
-      .normalize('NFKC')
-      .replace(/\//g, '%2F') // Forward slash
-      .replace(/\\/g, '%5C') // Backslash
-      .replace(/:/g, '%3A') // Colon
-      .replace(/\*/g, '%2A') // Asterisk
-      .replace(/\?/g, '%3F') // Question mark
-      .replace(/"/g, '%22') // Double quote
-      .replace(/</g, '%3C') // Less than
-      .replace(/>/g, '%3E') // Greater than
-      .replace(/\|/g, '%7C'); // Pipe
+    let sanitizedTag = tag.normalize('NFKC').replace(/[\\/"*?<>|:.]/g, '');
     if (!sanitizedTag) {
       sanitizedTag = 'default';
     }
