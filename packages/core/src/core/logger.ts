@@ -242,7 +242,7 @@ export class Logger {
     // The primary defense is using path.join, which handles path resolution.
     // We'll also remove characters that are problematic for file systems or shells.
     // We normalize to handle full-width characters.
-    let sanitizedTag = tag.normalize('NFKC').replace(/[\\/"*?<>|:.]/g, '');
+    let sanitizedTag = tag.replace(/[\\/"*?<>|:.]/g, '');
     if (!sanitizedTag) {
       sanitizedTag = 'default';
     }
