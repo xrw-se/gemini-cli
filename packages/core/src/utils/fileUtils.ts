@@ -52,7 +52,6 @@ export function isWithinRoot(
     normalizedPathToCheck.startsWith(rootWithSeparator)
   );
 }
-
 /**
  * Determines if a file is likely binary based on content sampling.
  * @param filePath Path to the file.
@@ -227,21 +226,24 @@ export async function processSingleFileContent(
   limit?: number,
 ): Promise<ProcessedFileReadResult> {
   try {
-    if (!fs.existsSync(filePath)) {
+
+    const filePath2 = await resolveLlmPath(filePath, process.cwd())
+
+    if (!fs.existsSync(filePath2)) {
       // Sync check is acceptable before async read
       return {
         llmContent: '',
         returnDisplay: 'File not found.',
-        error: `File not found: ${filePath}`,
+        error: `File not found: ${filePath2}`,
         errorType: FileErrorType.FILE_NOT_FOUND,
       };
     }
-    const stats = await fs.promises.stat(filePath);
+    const stats = await fs.promises.stat(filePath2);
     if (stats.isDirectory()) {
       return {
         llmContent: '',
         returnDisplay: 'Path is a directory.',
-        error: `Path is a directory, not a file: ${filePath}`,
+        error: `Path is a directory, not a file: ${filePath2}`,
         errorType: FileErrorType.IS_DIRECTORY,
       };
     }
@@ -252,16 +254,16 @@ export async function processSingleFileContent(
 
     if (fileSizeInBytes > maxFileSize) {
       throw new Error(
-        `File size exceeds the 20MB limit: ${filePath} (${(
+        `File size exceeds the 20MB limit: ${filePath2} (${(
           fileSizeInBytes /
           (1024 * 1024)
         ).toFixed(2)}MB)`,
       );
     }
 
-    const fileType = await detectFileType(filePath);
+    const fileType = await detectFileType(filePath2);
     const relativePathForDisplay = path
-      .relative(rootDirectory, filePath)
+      .relative(rootDirectory, filePath2)
       .replace(/\\/g, '/');
 
     switch (fileType) {
@@ -279,14 +281,14 @@ export async function processSingleFileContent(
             returnDisplay: `Skipped large SVG file (>1MB): ${relativePathForDisplay}`,
           };
         }
-        const content = await fs.promises.readFile(filePath, 'utf8');
+        const content = await fs.promises.readFile(filePath2, 'utf8');
         return {
           llmContent: content,
           returnDisplay: `Read SVG as text: ${relativePathForDisplay}`,
         };
       }
       case 'text': {
-        const content = await fs.promises.readFile(filePath, 'utf8');
+        const content = await fs.promises.readFile(filePath2, 'utf8');
         const lines = content.split('\n');
         const originalLineCount = lines.length;
 
@@ -340,13 +342,13 @@ export async function processSingleFileContent(
       case 'pdf':
       case 'audio':
       case 'video': {
-        const contentBuffer = await fs.promises.readFile(filePath);
+        const contentBuffer = await fs.promises.readFile(filePath2);
         const base64Data = contentBuffer.toString('base64');
         return {
           llmContent: {
             inlineData: {
               data: base64Data,
-              mimeType: mime.lookup(filePath) || 'application/octet-stream',
+              mimeType: mime.lookup(filePath2) || 'application/octet-stream',
             },
           },
           returnDisplay: `Read ${fileType} file: ${relativePathForDisplay}`,
@@ -358,7 +360,7 @@ export async function processSingleFileContent(
         return {
           llmContent: `Unhandled file type: ${exhaustiveCheck}`,
           returnDisplay: `Skipped unhandled file type: ${relativePathForDisplay}`,
-          error: `Unhandled file type for ${filePath}`,
+          error: `Unhandled file type for ${filePath2}`,
         };
       }
     }
@@ -373,4 +375,71 @@ export async function processSingleFileContent(
       error: `Error reading file ${filePath}: ${errorMessage}`,
     };
   }
+}
+
+
+
+/**
+ * Resolves a path provided by an LLM to a valid, writeable path, ensuring it
+ * remains within a specified root directory.
+ *
+ * This function handles several cases:
+ * 1.  It treats the LLM's path as relative to the `rootPath`.
+ * 2.  It explicitly prevents path traversal attacks (e.g., `../`) that would
+ * write a file outside the `rootPath`.
+ * 3.  If the initial resolved path's directory doesn't exist, it searches for
+ * the file's parent directory within a list of common subdirectories of the `rootPath`.
+ *
+ * @param llmPath - The path string provided by the language model.
+ * @param rootPath - The absolute path to the root directory the CLI is allowed to access.
+ * @returns A promise that resolves to the validated and resolved file path.
+ * @throws An error if the path cannot be resolved, is outside the root path, or is not found.
+ */
+export async function resolveLlmPath(llmPath: string, rootPath: string): Promise<string> {
+  // 1. Resolve the LLM path relative to the root.
+  // path.resolve is used to safely join the paths and handle any `.` or `..`.
+  const resolvedPath = path.resolve(rootPath, llmPath);
+
+  // 2. Security Check: Ensure the resolved path is still within the root path.
+  // This prevents the LLM from using ".." to escape the intended directory.
+  if (!resolvedPath.startsWith(rootPath)) {
+    throw new Error(`Resolved path "${resolvedPath}" is outside the allowed root directory "${rootPath}".`);
+  }
+
+
+  // 3. Check if the resolved path's directory exists.
+  const dirname = path.dirname(resolvedPath);
+  try {
+    await fs.promises.access(dirname);
+    return resolvedPath;
+  } catch (error) {
+    // If the directory doesn't exist, proceed to search common directories.
+  }
+
+  // 4. If the path doesn't exist, search in common directories within the root.
+  const fileName = path.basename(llmPath);
+
+  const entries = await fs.promises.readdir(rootPath, { withFileTypes: true });
+  const dynamicDirectories = entries
+      .filter(entry => entry.isDirectory())
+      .map(entry => entry.name)
+      .filter(name => !['node_modules', '.git', 'dist', 'build', 'coverage'].includes(name));
+
+  const searchDirectories = ['.', ...dynamicDirectories];
+
+  for (const dir of searchDirectories) {
+    const searchPath = path.resolve(rootPath, dir, fileName);
+    const searchDir = path.dirname(searchPath);
+
+    // We only need to check the directory's existence.
+    try {
+      await fs.promises.access(searchDir);
+      return searchPath;
+    } catch (error) {
+      // Directory not found, continue searching.
+    }
+  }
+
+  // 5. If no path is found after all checks, throw an error.
+  throw new Error(`File not found: ${llmPath}`);
 }

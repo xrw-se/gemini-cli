@@ -28,6 +28,7 @@ import { DEFAULT_DIFF_OPTIONS, getDiffStat } from './diffOptions.js';
 import { ReadFileTool } from './read-file.js';
 import { ModifiableDeclarativeTool, ModifyContext } from './modifiable-tool.js';
 import { IDEConnectionStatus } from '../ide/ide-client.js';
+import { resolveLlmPath } from '../utils/fileUtils.js';
 
 export function applyReplacement(
   currentContent: string | null,
@@ -113,6 +114,12 @@ class EditToolInvocation implements ToolInvocation<EditToolParams, ToolResult> {
     params: EditToolParams,
     abortSignal: AbortSignal,
   ): Promise<CalculatedEdit> {
+    const resolvedPath = await resolveLlmPath(
+      params.file_path,
+      process.cwd(),
+    );
+    params.file_path = resolvedPath;
+
     const expectedReplacements = params.expected_replacements ?? 1;
     let currentContent: string | null = null;
     let fileExists = false;
@@ -123,6 +130,8 @@ class EditToolInvocation implements ToolInvocation<EditToolParams, ToolResult> {
     let error:
       | { display: string; raw: string; type: ToolErrorType }
       | undefined = undefined;
+    let patchedContent: string | false = false;
+
 
     try {
       currentContent = fs.readFileSync(params.file_path, 'utf8');
@@ -134,8 +143,12 @@ class EditToolInvocation implements ToolInvocation<EditToolParams, ToolResult> {
         // Rethrow unexpected FS errors (permissions, etc.)
         throw err;
       }
-      fileExists = false;
+      // This case should ideally not be hit if resolvedPath.exists is accurate.
+      // But as a fallback, we can treat it as if the file doesn't exist.
+      currentContent = null;
+      fileExists = true;
     }
+    
 
     if (params.old_string === '' && !fileExists) {
       // Creating a new file
@@ -143,7 +156,7 @@ class EditToolInvocation implements ToolInvocation<EditToolParams, ToolResult> {
     } else if (!fileExists) {
       // Trying to edit a nonexistent file (and old_string is not empty)
       error = {
-        display: `File not found. Cannot apply edit. Use an empty old_string to create a new file.`,
+        display: `File not found. Cannot apply edit. Use an empty old_string to create a new file.`, 
         raw: `File not found: ${params.file_path}`,
         type: ToolErrorType.FILE_NOT_FOUND,
       };
@@ -163,47 +176,68 @@ class EditToolInvocation implements ToolInvocation<EditToolParams, ToolResult> {
       if (params.old_string === '') {
         // Error: Trying to create a file that already exists
         error = {
-          display: `Failed to edit. Attempted to create a file that already exists.`,
+          display: `Failed to edit. Attempted to create a file that already exists.`, 
           raw: `File already exists, cannot create: ${params.file_path}`,
           type: ToolErrorType.ATTEMPT_TO_CREATE_EXISTING_FILE,
         };
       } else if (occurrences === 0) {
-        error = {
-          display: `Failed to edit, could not find the string to replace.`,
-          raw: `Failed to edit, 0 occurrences found for old_string in ${params.file_path}. No edits made. The exact text in old_string was not found. Ensure you're not escaping content incorrectly and check whitespace, indentation, and context. Use ${ReadFileTool.Name} tool to verify.`,
-          type: ToolErrorType.EDIT_NO_OCCURRENCE_FOUND,
-        };
+        const patch = Diff.createPatch(
+          params.file_path,
+          finalOldString,
+          finalNewString,
+          '',
+          '',
+          { context: 10000 },
+        );
+
+        // Fuzz factor allows for some differences.
+        patchedContent = Diff.applyPatch(currentContent, patch, {
+          fuzzFactor: 2,
+        });
+
+        if (patchedContent !== false) {
+          occurrences = 1;
+        } else {
+          error = {
+            display: `Failed to edit, could not find the string to replace.`, 
+            raw: `Failed to edit, 0 occurrences found for old_string in ${params.file_path}. No edits made. The exact text in old_string was not found. Ensure you're not escaping content incorrectly and check whitespace, indentation, and context. Use ${ReadFileTool.Name} tool to verify.`, 
+            type: ToolErrorType.EDIT_NO_OCCURRENCE_FOUND,
+          };
+        }
       } else if (occurrences !== expectedReplacements) {
         const occurrenceTerm =
           expectedReplacements === 1 ? 'occurrence' : 'occurrences';
 
         error = {
-          display: `Failed to edit, expected ${expectedReplacements} ${occurrenceTerm} but found ${occurrences}.`,
+          display: `Failed to edit, expected ${expectedReplacements} ${occurrenceTerm} but found ${occurrences}.`, 
           raw: `Failed to edit, Expected ${expectedReplacements} ${occurrenceTerm} but found ${occurrences} for old_string in file: ${params.file_path}`,
           type: ToolErrorType.EDIT_EXPECTED_OCCURRENCE_MISMATCH,
         };
       } else if (finalOldString === finalNewString) {
         error = {
-          display: `No changes to apply. The old_string and new_string are identical.`,
-          raw: `No changes to apply. The old_string and new_string are identical in file: ${params.file_path}`,
+          display: `No changes to apply. The old_string and new_string are identical.`, 
+          raw: `No changes to apply. The old_string and new_string are identical in file: ${params.file_path}`, 
           type: ToolErrorType.EDIT_NO_CHANGE,
         };
       }
     } else {
       // Should not happen if fileExists and no exception was thrown, but defensively:
       error = {
-        display: `Failed to read content of file.`,
-        raw: `Failed to read content of existing file: ${params.file_path}`,
+        display: `Failed to read content of file.`, 
+        raw: `Failed to read content of existing file: ${params.file_path}`, 
         type: ToolErrorType.READ_CONTENT_FAILURE,
       };
     }
 
-    const newContent = applyReplacement(
-      currentContent,
-      finalOldString,
-      finalNewString,
-      isNewFile,
-    );
+    const newContent =
+      patchedContent !== false
+        ? patchedContent
+        : applyReplacement(
+            currentContent,
+            finalOldString,
+            finalNewString,
+            isNewFile,
+          );
 
     return {
       currentContent,
@@ -224,6 +258,12 @@ class EditToolInvocation implements ToolInvocation<EditToolParams, ToolResult> {
     if (this.config.getApprovalMode() === ApprovalMode.AUTO_EDIT) {
       return false;
     }
+
+    const resolvedPath = await resolveLlmPath(
+      this.params.file_path,
+      process.cwd(),
+    );
+    this.params.file_path = resolvedPath;
 
     let editData: CalculatedEdit;
     try {
@@ -312,6 +352,13 @@ class EditToolInvocation implements ToolInvocation<EditToolParams, ToolResult> {
    */
   async execute(signal: AbortSignal): Promise<ToolResult> {
     let editData: CalculatedEdit;
+
+    const resolvedPath = await resolveLlmPath(
+      this.params.file_path,
+      process.cwd(),
+    );
+    this.params.file_path = resolvedPath;
+
     try {
       editData = await this.calculateEdit(this.params, signal);
     } catch (error) {

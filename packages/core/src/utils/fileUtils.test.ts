@@ -25,6 +25,7 @@ import {
   isBinaryFile,
   detectFileType,
   processSingleFileContent,
+  resolveLlmPath,
 } from './fileUtils.js';
 
 vi.mock('mime-types', () => ({
@@ -565,6 +566,118 @@ describe('fileUtils', () => {
         'File size exceeds the 20MB limit',
       );
       expect(result.llmContent).toContain('File size exceeds the 20MB limit');
+    });
+  });
+
+  describe('resolveLlmPath', () => {
+    let rootDir: string;
+    let srcDir: string;
+    let fileInRoot: string;
+    let fileInSrc: string;
+
+    beforeEach(() => {
+      // Create a temporary root directory
+      rootDir = actualNodeFs.mkdtempSync(path.join(os.tmpdir(), 'resolve-path-test-'));
+
+      // Create a common subdirectory and a file within it
+      srcDir = path.join(rootDir, 'src');
+      actualNodeFs.mkdirSync(srcDir);
+      fileInSrc = path.join(srcDir, 'test.txt');
+      actualNodeFs.writeFileSync(fileInSrc, 'hello from src');
+
+      // Create a file in the root
+      fileInRoot = path.join(rootDir, 'root.txt');
+      actualNodeFs.writeFileSync(fileInRoot, 'hello from root');
+    });
+
+    afterEach(() => {
+      // Clean up the temporary directory
+      actualNodeFs.rmSync(rootDir, { recursive: true, force: true });
+    });
+
+    it('should resolve a simple, valid path directly', async () => {
+      const llmPath = 'src/test.txt';
+      const expectedPath = path.join(rootDir, 'src', 'test.txt');
+      await expect(resolveLlmPath(llmPath, rootDir)).resolves.toBe(expectedPath);
+    });
+
+    it('should find a file in a common subdirectory when the full path is not given', async () => {
+      const llmPath = 'test.txt'; // Just the filename
+      const expectedPath = path.join(rootDir, 'src', 'test.txt');
+      await expect(resolveLlmPath(llmPath, rootDir)).resolves.toBe(expectedPath);
+    });
+
+    it('should prioritize the file in the root if it exists there', async () => {
+      const llmPath = 'root.txt'; // Just the filename
+      const expectedPath = path.join(rootDir, 'root.txt');
+      await expect(resolveLlmPath(llmPath, rootDir)).resolves.toBe(expectedPath);
+    });
+
+    it('should throw a security error for path traversal attempts', async () => {
+      const llmPath = '../outside.txt';
+      await expect(resolveLlmPath(llmPath, rootDir)).rejects.toThrow(
+        'is outside the allowed root directory'
+      );
+    });
+
+    it('should throw a "File not found" error if the file does not exist anywhere', async () => {
+      const llmPath = 'nonexistent.txt';
+      await expect(resolveLlmPath(llmPath, rootDir)).rejects.toThrow(
+        'File not found: nonexistent.txt'
+      );
+    });
+
+    it('should handle a path that is just a filename and exists in a common directory', async () => {
+      const llmPath = 'test.txt';
+      const expectedPath = path.join(rootDir, 'src', 'test.txt');
+      await expect(resolveLlmPath(llmPath, rootDir)).resolves.toBe(expectedPath);
+    });
+
+    it('should handle absolute paths, as long as they are within the root', async () => {
+      const llmPath = fileInSrc; // Provide the absolute path
+      await expect(resolveLlmPath(llmPath, rootDir)).resolves.toBe(fileInSrc);
+    });
+
+    it('should throw a security error for absolute paths outside the root', async () => {
+      const outsideDir = actualNodeFs.mkdtempSync(path.join(os.tmpdir(), 'outside-test-'));
+      const outsideFile = path.join(outsideDir, 'outside.txt');
+      actualNodeFs.writeFileSync(outsideFile, 'danger');
+
+      try {
+        await expect(resolveLlmPath(outsideFile, rootDir)).rejects.toThrow(
+          'is outside the allowed root directory'
+        );
+      } finally {
+        actualNodeFs.rmSync(outsideDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should find a file in a dynamically found subdirectory', async () => {
+      const customDir = path.join(rootDir, 'my-app-logic');
+      actualNodeFs.mkdirSync(customDir);
+      const customFile = path.join(customDir, 'logic.js');
+      actualNodeFs.writeFileSync(customFile, 'export const value = 42;');
+
+      const llmPath = 'logic.js';
+      await expect(resolveLlmPath(llmPath, rootDir)).resolves.toBe(customFile);
+    });
+
+    it('should ignore excluded directories like node_modules', async () => {
+      // File in a valid directory
+      const validDir = path.join(rootDir, 'components');
+      actualNodeFs.mkdirSync(validDir);
+      const validFile = path.join(validDir, 'button.js');
+      actualNodeFs.writeFileSync(validFile, 'export default Button');
+
+      // File with the same name in an excluded directory
+      const nodeModulesDir = path.join(rootDir, 'node_modules');
+      actualNodeFs.mkdirSync(nodeModulesDir);
+      const excludedFile = path.join(nodeModulesDir, 'button.js');
+      actualNodeFs.writeFileSync(excludedFile, 'some dependency');
+
+      const llmPath = 'button.js';
+      // Should resolve to the one in 'components', not 'node_modules'
+      await expect(resolveLlmPath(llmPath, rootDir)).resolves.toBe(validFile);
     });
   });
 });
