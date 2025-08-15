@@ -18,6 +18,16 @@ interface HeaderProps {
   nightly: boolean;
 }
 
+const GradientText: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const textElement = <Text color={theme.text.primary}>{children}</Text>;
+  if (theme.ui.gradient && theme.ui.gradient.length > 0) {
+    return <Gradient colors={theme.ui.gradient}>{textElement}</Gradient>;
+  }
+  return textElement;
+};
+
 export const Header: React.FC<HeaderProps> = ({
   customAsciiArt,
   version,
@@ -47,22 +57,12 @@ export const Header: React.FC<HeaderProps> = ({
       flexShrink={0}
       flexDirection="column"
     >
-      {theme.ui.gradient ? (
-        <Gradient colors={theme.ui.gradient}>
-          <Text color={theme.text.primary}>{displayTitle}</Text>
-        </Gradient>
-      ) : (
-        <Text color={theme.text.primary}>{displayTitle}</Text>
-      )}
+      <Box>
+        <GradientText>{displayTitle}</GradientText>
+      </Box>
       {nightly && (
         <Box width="100%" flexDirection="row" justifyContent="flex-end">
-          {theme.ui.gradient ? (
-            <Gradient colors={theme.ui.gradient}>
-              <Text color={theme.text.primary}>v{version}</Text>
-            </Gradient>
-          ) : (
-            <Text color={theme.text.primary}>v{version}</Text>
-          )}
+          <Text color={theme.text.primary}>v{version}</Text>
         </Box>
       )}
     </Box>
