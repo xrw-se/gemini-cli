@@ -289,12 +289,12 @@ const renderDiffContent = (
         acc.push(
           <Box key={lineKey} flexDirection="row">
             <Text
-              color={theme.text.secondary}
+              color={theme?.semanticColors.text.secondary}
               backgroundColor={
                 line.type === 'add'
-                  ? theme.background.diff.added
+                  ? theme?.semanticColors.background.diff.added
                   : line.type === 'del'
-                    ? theme.background.diff.removed
+                    ? theme?.semanticColors.background.diff.removed
                     : undefined
               }
             >
@@ -311,21 +311,21 @@ const renderDiffContent = (
               <Text
                 backgroundColor={
                   line.type === 'add'
-                    ? theme.background.diff.added
-                    : theme.background.diff.removed
+                    ? theme?.semanticColors.background.diff.added
+                    : theme?.semanticColors.background.diff.removed
                 }
                 wrap="wrap"
               >
                 <Text
                   color={
                     line.type === 'add'
-                      ? theme.status.success
-                      : theme.status.error
+                      ? theme?.semanticColors.status.success
+                      : theme?.semanticColors.status.error
                   }
                 >
                   {prefixSymbol}
                 </Text>{' '}
-                {colorizeLine(displayContent, language)}
+                {colorizeLine(displayContent, language, theme)}
               </Text>
             )}
           </Box>,
