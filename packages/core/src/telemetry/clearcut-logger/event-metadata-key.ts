@@ -234,10 +234,10 @@ export enum EventMetadataKey {
   // ===========================================================================
 
   // Logs the approval mode
-  GEMINI_CLI_APPROVAL_MODE = 54,
+  GEMINI_CLI_APPROVAL_MODE = 56,
 
   // Logs the number of turns
-  GEMINI_CLI_CONVERSATION_TURN_COUNT = 55,
+  GEMINI_CLI_CONVERSATION_TURN_COUNT = 57,
 }
 
 export function getEventMetadataKey(
