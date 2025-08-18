@@ -8,8 +8,6 @@ import { render } from 'ink-testing-library';
 import { describe, it, expect, vi } from 'vitest';
 import { Footer } from './Footer.js';
 import * as useTerminalSize from '../hooks/useTerminalSize.js';
-import { tildeifyPath } from '@google/gemini-cli-core';
-import path from 'node:path';
 
 vi.mock('../hooks/useTerminalSize.js');
 const useTerminalSizeMock = vi.mocked(useTerminalSize.useTerminalSize);
@@ -57,7 +55,6 @@ describe('<Footer />', () => {
   it('does not display the branch name when not provided', () => {
     const { lastFrame } = renderWithWidth(120, {
       ...defaultProps,
-      branchName: undefined,
     });
     expect(lastFrame()).not.toContain(`(${defaultProps.branchName}*)`);
   });
@@ -72,7 +69,6 @@ describe('<Footer />', () => {
     it('should display untrusted when isTrustedFolder is false', () => {
       const { lastFrame } = renderWithWidth(120, {
         ...defaultProps,
-        isTrustedFolder: false,
       });
       expect(lastFrame()).toContain('untrusted');
     });
@@ -81,7 +77,6 @@ describe('<Footer />', () => {
       vi.stubEnv('SANDBOX', 'gemini-cli-test-sandbox');
       const { lastFrame } = renderWithWidth(120, {
         ...defaultProps,
-        isTrustedFolder: undefined,
       });
       expect(lastFrame()).toContain('test');
       vi.unstubAllEnvs();
@@ -92,7 +87,6 @@ describe('<Footer />', () => {
       vi.stubEnv('SEATBELT_PROFILE', 'test-profile');
       const { lastFrame } = renderWithWidth(120, {
         ...defaultProps,
-        isTrustedFolder: true,
       });
       expect(lastFrame()).toMatch(/macOS Seatbelt.*\(test-profile\)/s);
       vi.unstubAllEnvs();
@@ -103,7 +97,6 @@ describe('<Footer />', () => {
       vi.stubEnv('SANDBOX', '');
       const { lastFrame } = renderWithWidth(120, {
         ...defaultProps,
-        isTrustedFolder: true,
       });
       expect(lastFrame()).toContain('no sandbox');
       vi.unstubAllEnvs();
@@ -113,7 +106,6 @@ describe('<Footer />', () => {
       vi.stubEnv('SANDBOX', 'gemini-cli-test-sandbox');
       const { lastFrame } = renderWithWidth(120, {
         ...defaultProps,
-        isTrustedFolder: false,
       });
       expect(lastFrame()).toContain('untrusted');
       expect(lastFrame()).not.toMatch(/test-sandbox/s);
