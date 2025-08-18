@@ -1,28 +1,31 @@
 {
-  "name": "@gemini-cli-a2a/server",
+  "name": "@google/gemini-cli-a2a-server",
   "version": "0.1.0",
-  "description": "Gemini CLI Server",
+  "description": "Gemini CLI A2A Server",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/google-gemini/gemini-cli.git",
+    "directory": "packages/a2a-server"
+
+  },
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "start": "node dist/src/index.js",
-    "build": "../../scripts/build_package.sh",
+    "build": "node ../../scripts/build_package.js",
     "clean": "rm -rf dist",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write .",
     "test": "vitest run",
     "test:ci": "vitest run --coverage",
-    "typecheck": "tsc --noEmit",
-    "prerelease:version": "node ../../scripts/bind_package_version.js",
-    "prerelease:deps": "node ../../scripts/bind_package_dependencies.js",
-    "prepack": "npm run build"
+    "typecheck": "tsc --noEmit"
   },
   "files": [
     "dist"
   ],
   "dependencies": {
     "@google/gemini-cli-core": "file:../core",
-    "@a2a-js/sdk": "^0.2.1",
+    "@a2a-js/sdk": "^0.3.2",
     "@google-cloud/storage": "^7.16.0",
     "express": "^5.1.0",
     "fs-extra": "^11.3.0",

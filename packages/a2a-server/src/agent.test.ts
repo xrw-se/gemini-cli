@@ -158,7 +158,7 @@ describe('A2A Protocol Endpoints', () => {
     const textContentEvent = events[2].result as TaskStatusUpdateEvent;
     expect(textContentEvent.kind).toBe('status-update');
     expect(textContentEvent.status.state).toBe('working');
-    expect(textContentEvent.metadata?.coderAgent).toMatchObject({
+    expect(textContentEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'text-content',
     });
     expect(textContentEvent.status.message?.parts).toMatchObject([
@@ -222,7 +222,7 @@ describe('A2A Protocol Endpoints', () => {
     const workingEvent2 = events[2].result as TaskStatusUpdateEvent;
     expect(workingEvent2.kind).toBe('status-update');
     expect(workingEvent2.status.state).toBe('working');
-    expect(workingEvent2.metadata?.coderAgent).toMatchObject({
+    expect(workingEvent2.metadata?.['coderAgent']).toMatchObject({
       kind: 'state-change',
     });
 
@@ -230,7 +230,7 @@ describe('A2A Protocol Endpoints', () => {
     const toolCallUpdateEvent = events[3].result as TaskStatusUpdateEvent;
     expect(toolCallUpdateEvent.kind).toBe('status-update');
     expect(toolCallUpdateEvent.status.state).toBe('working');
-    expect(toolCallUpdateEvent.metadata?.coderAgent).toMatchObject({
+    expect(toolCallUpdateEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(toolCallUpdateEvent.status.message?.parts).toMatchObject([
@@ -245,7 +245,7 @@ describe('A2A Protocol Endpoints', () => {
     // State update: awaiting_approval update
     const toolCallConfirmationEvent = events[4].result as TaskStatusUpdateEvent;
     expect(toolCallConfirmationEvent.kind).toBe('status-update');
-    expect(toolCallConfirmationEvent.metadata?.coderAgent).toMatchObject({
+    expect(toolCallConfirmationEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-confirmation',
     });
     expect(toolCallConfirmationEvent.status.message?.parts).toMatchObject([
@@ -336,7 +336,7 @@ describe('A2A Protocol Endpoints', () => {
 
     // State Update: Validate each tool call
     const toolCallValidateEvent1 = events[3].result as TaskStatusUpdateEvent;
-    expect(toolCallValidateEvent1.metadata?.coderAgent).toMatchObject({
+    expect(toolCallValidateEvent1.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(toolCallValidateEvent1.status.message?.parts).toMatchObject([
@@ -348,7 +348,7 @@ describe('A2A Protocol Endpoints', () => {
       },
     ]);
     const toolCallValidateEvent2 = events[4].result as TaskStatusUpdateEvent;
-    expect(toolCallValidateEvent2.metadata?.coderAgent).toMatchObject({
+    expect(toolCallValidateEvent2.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(toolCallValidateEvent2.status.message?.parts).toMatchObject([
@@ -362,7 +362,7 @@ describe('A2A Protocol Endpoints', () => {
 
     // State Update: Set each tool call to awaiting
     const toolCallAwaitEvent1 = events[5].result as TaskStatusUpdateEvent;
-    expect(toolCallAwaitEvent1.metadata?.coderAgent).toMatchObject({
+    expect(toolCallAwaitEvent1.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-confirmation',
     });
     expect(toolCallAwaitEvent1.status.message?.parts).toMatchObject([
@@ -374,7 +374,7 @@ describe('A2A Protocol Endpoints', () => {
       },
     ]);
     const toolCallAwaitEvent2 = events[6].result as TaskStatusUpdateEvent;
-    expect(toolCallAwaitEvent2.metadata?.coderAgent).toMatchObject({
+    expect(toolCallAwaitEvent2.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-confirmation',
     });
     expect(toolCallAwaitEvent2.status.message?.parts).toMatchObject([
@@ -446,7 +446,7 @@ describe('A2A Protocol Endpoints', () => {
 
     // Status update: tool-call-update (validating)
     const validatingEvent = events[3].result as TaskStatusUpdateEvent;
-    expect(validatingEvent.metadata?.coderAgent).toMatchObject({
+    expect(validatingEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(validatingEvent.status.message?.parts).toMatchObject([
@@ -460,7 +460,7 @@ describe('A2A Protocol Endpoints', () => {
 
     // Status update: tool-call-update (scheduled)
     const scheduledEvent = events[4].result as TaskStatusUpdateEvent;
-    expect(scheduledEvent.metadata?.coderAgent).toMatchObject({
+    expect(scheduledEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(scheduledEvent.status.message?.parts).toMatchObject([
@@ -474,7 +474,7 @@ describe('A2A Protocol Endpoints', () => {
 
     // Status update: tool-call-update (executing)
     const executingEvent = events[5].result as TaskStatusUpdateEvent;
-    expect(executingEvent.metadata?.coderAgent).toMatchObject({
+    expect(executingEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(executingEvent.status.message?.parts).toMatchObject([
@@ -488,7 +488,7 @@ describe('A2A Protocol Endpoints', () => {
 
     // Status update: tool-call-update (success)
     const successEvent = events[6].result as TaskStatusUpdateEvent;
-    expect(successEvent.metadata?.coderAgent).toMatchObject({
+    expect(successEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(successEvent.status.message?.parts).toMatchObject([
@@ -507,7 +507,7 @@ describe('A2A Protocol Endpoints', () => {
 
     // Status update: text-content (final LLM response)
     const textContentEvent = events[8].result as TaskStatusUpdateEvent;
-    expect(textContentEvent.metadata?.coderAgent).toMatchObject({
+    expect(textContentEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'text-content',
     });
     expect(textContentEvent.status.message?.parts).toMatchObject([
@@ -610,7 +610,7 @@ describe('A2A Protocol Endpoints', () => {
     });
 
     const scheduledEvent = events2[0].result as TaskStatusUpdateEvent;
-    expect(scheduledEvent.metadata?.coderAgent).toMatchObject({
+    expect(scheduledEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(scheduledEvent.status.message?.parts).toMatchObject([
@@ -623,7 +623,7 @@ describe('A2A Protocol Endpoints', () => {
     ]);
 
     const executingEvent = events2[1].result as TaskStatusUpdateEvent;
-    expect(executingEvent.metadata?.coderAgent).toMatchObject({
+    expect(executingEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(executingEvent.status.message?.parts).toMatchObject([
@@ -636,7 +636,7 @@ describe('A2A Protocol Endpoints', () => {
     ]);
 
     const successEvent = events2[2].result as TaskStatusUpdateEvent;
-    expect(successEvent.metadata?.coderAgent).toMatchObject({
+    expect(successEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(successEvent.status.message?.parts).toMatchObject([
@@ -652,13 +652,13 @@ describe('A2A Protocol Endpoints', () => {
     ]);
 
     const workingEvent = events2[3].result as TaskStatusUpdateEvent;
-    expect(workingEvent.metadata?.coderAgent).toMatchObject({
+    expect(workingEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'state-change',
     });
     expect(workingEvent.status.state).toBe('working');
 
     const textContentEvent = events2[4].result as TaskStatusUpdateEvent;
-    expect(textContentEvent.metadata?.coderAgent).toMatchObject({
+    expect(textContentEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'text-content',
     });
     expect(textContentEvent.status.message?.parts).toMatchObject([
@@ -731,7 +731,7 @@ describe('A2A Protocol Endpoints', () => {
 
     // Status update: tool-call-update (validating)
     const validatingEvent = events[3].result as TaskStatusUpdateEvent;
-    expect(validatingEvent.metadata?.coderAgent).toMatchObject({
+    expect(validatingEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(validatingEvent.status.message?.parts).toMatchObject([
@@ -745,7 +745,7 @@ describe('A2A Protocol Endpoints', () => {
 
     // Status update: tool-call-update (scheduled)
     const awaitingEvent = events[4].result as TaskStatusUpdateEvent;
-    expect(awaitingEvent.metadata?.coderAgent).toMatchObject({
+    expect(awaitingEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(awaitingEvent.status.message?.parts).toMatchObject([
@@ -759,7 +759,7 @@ describe('A2A Protocol Endpoints', () => {
 
     // Status update: tool-call-update (executing)
     const executingEvent = events[5].result as TaskStatusUpdateEvent;
-    expect(executingEvent.metadata?.coderAgent).toMatchObject({
+    expect(executingEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(executingEvent.status.message?.parts).toMatchObject([
@@ -773,7 +773,7 @@ describe('A2A Protocol Endpoints', () => {
 
     // Status update: tool-call-update (success)
     const successEvent = events[6].result as TaskStatusUpdateEvent;
-    expect(successEvent.metadata?.coderAgent).toMatchObject({
+    expect(successEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'tool-call-update',
     });
     expect(successEvent.status.message?.parts).toMatchObject([
@@ -792,7 +792,7 @@ describe('A2A Protocol Endpoints', () => {
 
     // Status update: text-content (final LLM response)
     const textContentEvent = events[8].result as TaskStatusUpdateEvent;
-    expect(textContentEvent.metadata?.coderAgent).toMatchObject({
+    expect(textContentEvent.metadata?.['coderAgent']).toMatchObject({
       kind: 'text-content',
     });
     expect(textContentEvent.status.message?.parts).toMatchObject([

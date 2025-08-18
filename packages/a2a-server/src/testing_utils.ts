@@ -148,7 +148,7 @@ export function assertUniqueFinalEventIsLast(
 ) {
   // Final event is input-required & final
   const finalEvent = events[events.length - 1].result as TaskStatusUpdateEvent;
-  expect(finalEvent.metadata?.coderAgent).toMatchObject({
+  expect(finalEvent.metadata?.['coderAgent']).toMatchObject({
     kind: 'state-change',
   });
   expect(finalEvent.status?.state).toBe('input-required');

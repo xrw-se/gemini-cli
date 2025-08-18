@@ -34,7 +34,7 @@ export async function loadConfig(
 ): Promise<Config> {
   const mcpServers = mergeMcpServers(settings, extensions);
   const workspaceDir = process.cwd();
-  const adcFilePath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  const adcFilePath = process.env['GOOGLE_APPLICATION_CREDENTIALS'];
 
   const configParams: ConfigParameters = {
     sessionId: taskId,
@@ -42,14 +42,14 @@ export async function loadConfig(
     embeddingModel: DEFAULT_GEMINI_EMBEDDING_MODEL,
     sandbox: undefined, // Sandbox might not be relevant for a server-side agent
     targetDir: workspaceDir, // Or a specific directory the agent operates on
-    debugMode: process.env.DEBUG === 'true' || false,
+    debugMode: process.env['DEBUG'] === 'true' || false,
     question: '', // Not used in server mode directly like CLI
     fullContext: false, // Server might have different context needs
     coreTools: settings.coreTools || undefined,
     excludeTools: settings.excludeTools || undefined,
     showMemoryUsage: settings.showMemoryUsage || false,
     approvalMode:
-      process.env.GEMINI_YOLO_MODE === 'true'
+      process.env['GEMINI_YOLO_MODE'] === 'true'
         ? ApprovalMode.YOLO
         : ApprovalMode.DEFAULT,
     mcpServers,
@@ -58,7 +58,7 @@ export async function loadConfig(
       enabled: settings.telemetry?.enabled,
       target: settings.telemetry?.target as TelemetryTarget,
       otlpEndpoint:
-        process.env.OTEL_EXPORTER_OTLP_ENDPOINT ??
+        process.env['OTEL_EXPORTER_OTLP_ENDPOINT'] ??
         settings.telemetry?.otlpEndpoint,
       logPrompts: settings.telemetry?.logPrompts,
     },
@@ -89,7 +89,7 @@ export async function loadConfig(
   // Needed to initialize ToolRegistry, and git checkpointing if enabled
   await config.initialize();
 
-  if (process.env.USE_CCPA) {
+  if (process.env['USE_CCPA']) {
     logger.info('[Config] Using CCPA Auth:');
     try {
       if (adcFilePath) {
@@ -102,9 +102,9 @@ export async function loadConfig(
     }
     await config.refreshAuth(AuthType.LOGIN_WITH_GOOGLE);
     logger.info(
-      `[Config] GOOGLE_CLOUD_PROJECT: ${process.env.GOOGLE_CLOUD_PROJECT}`,
+      `[Config] GOOGLE_CLOUD_PROJECT: ${process.env['GOOGLE_CLOUD_PROJECT']}`,
     );
-  } else if (process.env.GEMINI_API_KEY) {
+  } else if (process.env['GEMINI_API_KEY']) {
     logger.info('[Config] Using Gemini API Key');
     await config.refreshAuth(AuthType.USE_GEMINI);
   } else {
@@ -137,7 +137,7 @@ export function mergeMcpServers(settings: Settings, extensions: Extension[]) {
 export function setTargetDir(agentSettings: AgentSettings | undefined): string {
   const originalCWD = process.cwd();
   const targetDir =
-    process.env.CODER_AGENT_WORKSPACE_PATH ??
+    process.env['CODER_AGENT_WORKSPACE_PATH'] ??
     (agentSettings?.kind === CoderAgentEvent.StateAgentSettingsEvent
       ? agentSettings.workspacePath
       : undefined);

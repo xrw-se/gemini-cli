@@ -76,7 +76,7 @@ class TaskWrapper {
       history: [],
       artifacts: [],
     };
-    sdkTask.metadata!._contextId = this.task.contextId;
+    sdkTask.metadata!['_contextId'] = this.task.contextId;
     return sdkTask;
   }
 }
@@ -91,6 +91,7 @@ const coderAgentCard: AgentCard = {
     url: 'https://google.com',
   },
   version: '0.0.2', // Incremented version
+  protocolVersion: '1.0',
   capabilities: {
     streaming: true,
     pushNotifications: false,
@@ -158,7 +159,7 @@ class CoderAgentExecutor implements AgentExecutor {
     const agentSettings = persistedState._agentSettings;
     const config = await this.getConfig(agentSettings, sdkTask.id);
     const contextId =
-      (metadata._contextId as string) || (sdkTask.contextId as string);
+      (metadata['_contextId'] as string) || (sdkTask.contextId as string);
     const runtimeTask = await Task.create(
       sdkTask.id,
       contextId,
@@ -328,7 +329,7 @@ class CoderAgentExecutor implements AgentExecutor {
     const contextId =
       userMessage.contextId ||
       sdkTask?.contextId ||
-      sdkTask?.metadata?._contextId ||
+      sdkTask?.metadata?.['_contextId'] ||
       uuidv4();
 
     logger.info(
@@ -337,7 +338,7 @@ class CoderAgentExecutor implements AgentExecutor {
     logger.info(
       `[CoderAgentExecutor] userMessage: ${JSON.stringify(userMessage)}`,
     );
-    eventBus.on('event', (event) => logger.info('[EventBus event]: ', event));
+    eventBus.on('event', (event: any) => logger.info('[EventBus event]: ', event));
 
     const store = requestStorage.getStore();
     if (!store) {
@@ -421,7 +422,7 @@ class CoderAgentExecutor implements AgentExecutor {
       }
     } else {
       logger.info(`[CoderAgentExecutor] Creating new task ${taskId}.`);
-      const agentSettings = userMessage.metadata?.coderAgent as AgentSettings;
+      const agentSettings = userMessage.metadata?.['coderAgent'] as AgentSettings;
       wrapper = await this.createTask(
         taskId,
         contextId as string,
@@ -646,13 +647,13 @@ export function updateCoderAgentCardUrl(port: number) {
 async function main() {
   try {
     const expressApp = await createApp();
-    const port = process.env.CODER_AGENT_PORT || 0;
+    const port = process.env['CODER_AGENT_PORT'] || 0;
 
     const server = expressApp.listen(port, () => {
       const address = server.address();
       let actualPort;
-      if (process.env.CODER_AGENT_PORT) {
-        actualPort = process.env.CODER_AGENT_PORT;
+      if (process.env['CODER_AGENT_PORT']) {
+        actualPort = process.env['CODER_AGENT_PORT'];
       } else if (address && typeof address !== 'string') {
         actualPort = address.port;
       } else {
@@ -676,7 +677,7 @@ async function main() {
 export async function createApp() {
   try {
     // loadEnvironment() is called within getConfig now
-    const bucketName = process.env.GCS_BUCKET_NAME;
+    const bucketName = process.env['GCS_BUCKET_NAME'];
     let taskStoreForExecutor: TaskStore;
     let taskStoreForHandler: TaskStore;
 
