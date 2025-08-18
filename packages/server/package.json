@@ -1,0 +1,45 @@
+{
+  "name": "@gemini-cli-a2a/server",
+  "version": "0.1.0",
+  "description": "Gemini CLI Server",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/src/index.js",
+    "build": "../../scripts/build_package.sh",
+    "clean": "rm -rf dist",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:ci": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "prerelease:version": "node ../../scripts/bind_package_version.js",
+    "prerelease:deps": "node ../../scripts/bind_package_dependencies.js",
+    "prepack": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@google/gemini-cli-core": "file:../core",
+    "@a2a-js/sdk": "^0.2.1",
+    "@google-cloud/storage": "^7.16.0",
+    "express": "^5.1.0",
+    "fs-extra": "^11.3.0",
+    "tar": "^7.4.3",
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/supertest": "^6.0.3",
+    "@types/tar": "^6.1.13",
+    "dotenv": "^16.4.5",
+    "supertest": "^7.1.4",
+    "typescript": "^5.3.3",
+    "vitest": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
