@@ -903,7 +903,15 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
           items={[
             <Box flexDirection="column" key="header">
               {!settings.merged.hideBanner && (
-                <Header version={version} nightly={nightly} />
+                <Header
+                  version={version}
+                  nightly={nightly}
+                  targetDir={config.getTargetDir()}
+                  branchName={branchName}
+                  debugMode={config.getDebugMode()}
+                  debugMessage={debugMessage}
+                  vimMode={vimModeEnabled ? vimMode : undefined}
+                />
               )}
               {!settings.merged.hideTips && <Tips config={config} />}
             </Box>,
@@ -1195,10 +1203,6 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
           )}
           <Footer
             model={currentModel}
-            targetDir={config.getTargetDir()}
-            debugMode={config.getDebugMode()}
-            branchName={branchName}
-            debugMessage={debugMessage}
             corgiMode={corgiMode}
             errorCount={errorCount}
             showErrorDetails={showErrorDetails}
@@ -1206,8 +1210,6 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
               config.getDebugMode() || settings.merged.showMemoryUsage || false
             }
             promptTokenCount={sessionStats.lastPromptTokenCount}
-            nightly={nightly}
-            vimMode={vimModeEnabled ? vimMode : undefined}
             isTrustedFolder={isTrustedFolderState}
           />
         </Box>
