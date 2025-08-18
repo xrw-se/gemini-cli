@@ -222,7 +222,7 @@ class ThemeManager {
 
     // First check built-in themes
     const builtInTheme = this.availableThemes.find(
-      (theme) => theme.name === themeName,
+      (theme) => theme.name.toLowerCase() === themeName.toLowerCase(),
     );
     if (builtInTheme) {
       return builtInTheme;
