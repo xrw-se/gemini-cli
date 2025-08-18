@@ -7,14 +7,14 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   Config,
-  DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_GEMINI_FLASH_LITE_MODEL,
   getResponseText,
 } from '@google/gemini-cli-core';
 import { Content, GenerateContentConfig } from '@google/genai';
 import { TextBuffer } from '../components/shared/text-buffer.js';
 
 export const PROMPT_COMPLETION_MIN_LENGTH = 5;
-export const PROMPT_COMPLETION_DEBOUNCE_MS = 500;
+export const PROMPT_COMPLETION_DEBOUNCE_MS = 250;
 
 export interface PromptCompletion {
   text: string;
@@ -116,9 +116,21 @@ export function usePromptCompletion({
         {
           role: 'user',
           parts: [
-            {
-              text: `You are a professional prompt engineering assistant. Complete the user's partial prompt with expert precision and clarity.\n\nUser's input: "${trimmedText}"\n\nContinue this prompt by adding specific, actionable details that align with the user's intent. Focus on:\n- Clear, precise language\n- Structured requirements\n- Professional terminology\n- Measurable outcomes\n\nStart your response with the exact user text ("${trimmedText}") followed by your completion. Provide practical, implementation-focused suggestions rather than creative interpretations.\n\nFormat: Plain text only. Single completion. Match the user's language.`,
-            },
+        {
+          text: `You are a professional prompt engineering assistant. Please keep your suggestions to 15 words maximum.
+
+    User's input: "${trimmedText}"
+
+    Continue this prompt by adding specific, actionable details that align with the user's intent. Focus on:
+    - Clear, precise language
+    - Structured requirements
+    - Professional terminology
+    - Measurable outcomes
+
+    Start your response with the exact user text ("${trimmedText}") followed by your completion. Provide practical, implementation-focused suggestions rather than creative interpretations.
+
+    Format: Plain text only. Single completion. Match the user's language.`,
+        },
           ],
         },
       ];
@@ -135,7 +147,7 @@ export function usePromptCompletion({
         contents,
         generationConfig,
         signal,
-        DEFAULT_GEMINI_FLASH_MODEL,
+        DEFAULT_GEMINI_FLASH_LITE_MODEL,
       );
 
       if (signal.aborted) {
