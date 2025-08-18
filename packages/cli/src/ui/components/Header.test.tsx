@@ -106,6 +106,10 @@ describe('<Header />', () => {
   });
 
   it('displays the version number when nightly is true', () => {
+    vi.spyOn(useTerminalSize, 'useTerminalSize').mockReturnValue({
+      columns: 200,
+      rows: 20,
+    });
     const { lastFrame } = render(
       <Header
         version="1.0.0"
