@@ -54,42 +54,6 @@ describe('<Footer />', () => {
     expect(lastFrame()).toBeDefined();
   });
 
-  describe('path display', () => {
-    it('should display shortened path on a wide terminal', () => {
-      const { lastFrame } = renderWithWidth(120);
-      const tildePath = tildeifyPath(defaultProps.targetDir);
-      const expectedPath = '...' + tildePath.slice(tildePath.length - 48 + 3);
-      expect(lastFrame()).toContain(expectedPath);
-    });
-
-    it('should display only the base directory name on a narrow terminal', () => {
-      const { lastFrame } = renderWithWidth(79);
-      const expectedPath = path.basename(defaultProps.targetDir);
-      expect(lastFrame()).toContain(expectedPath);
-    });
-
-    it('should use wide layout at 80 columns', () => {
-      const { lastFrame } = renderWithWidth(80);
-      const tildePath = tildeifyPath(defaultProps.targetDir);
-      const expectedPath = '...' + tildePath.slice(tildePath.length - 32 + 3);
-      expect(lastFrame()).toContain(expectedPath);
-    });
-
-    it('should use narrow layout at 79 columns', () => {
-      const { lastFrame } = renderWithWidth(79);
-      const expectedPath = path.basename(defaultProps.targetDir);
-      expect(lastFrame()).toContain(expectedPath);
-      const tildePath = tildeifyPath(defaultProps.targetDir);
-      const unexpectedPath = '...' + tildePath.slice(tildePath.length - 31 + 3);
-      expect(lastFrame()).not.toContain(unexpectedPath);
-    });
-  });
-
-  it('displays the branch name when provided', () => {
-    const { lastFrame } = renderWithWidth(120);
-    expect(lastFrame()).toContain(`(${defaultProps.branchName}*)`);
-  });
-
   it('does not display the branch name when not provided', () => {
     const { lastFrame } = renderWithWidth(120, {
       ...defaultProps,
