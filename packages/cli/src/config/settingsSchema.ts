@@ -501,7 +501,8 @@ export const SETTINGS_SCHEMA = {
     category: 'General',
     requiresRestart: true,
     default: false,
-    description: 'Enable AI-powered prompt completion suggestions while typing.',
+    description:
+      'Enable AI-powered prompt completion suggestions while typing.',
     showInDialog: true,
   },
 } as const;
