@@ -28,9 +28,6 @@ vi.mock('@google/gemini-cli-core', async (importOriginal) => {
 
 const defaultProps = {
   model: 'gemini-pro',
-  targetDir:
-    '/Users/test/project/foo/bar/and/some/more/directories/to/make/it/long',
-  branchName: 'main',
   debugMode: false,
   debugMessage: '',
   corgiMode: false,
@@ -52,13 +49,6 @@ describe('<Footer />', () => {
     expect(lastFrame()).toBeDefined();
   });
 
-  it('does not display the branch name when not provided', () => {
-    const { lastFrame } = renderWithWidth(120, {
-      ...defaultProps,
-    });
-    expect(lastFrame()).not.toContain(`(${defaultProps.branchName}*)`);
-  });
-
   it('displays the model name and context percentage', () => {
     const { lastFrame } = renderWithWidth(120);
     expect(lastFrame()).toContain(defaultProps.model);
@@ -69,6 +59,7 @@ describe('<Footer />', () => {
     it('should display untrusted when isTrustedFolder is false', () => {
       const { lastFrame } = renderWithWidth(120, {
         ...defaultProps,
+        isTrustedFolder: false,
       });
       expect(lastFrame()).toContain('untrusted');
     });
@@ -106,6 +97,7 @@ describe('<Footer />', () => {
       vi.stubEnv('SANDBOX', 'gemini-cli-test-sandbox');
       const { lastFrame } = renderWithWidth(120, {
         ...defaultProps,
+        isTrustedFolder: false,
       });
       expect(lastFrame()).toContain('untrusted');
       expect(lastFrame()).not.toMatch(/test-sandbox/s);
