@@ -77,7 +77,7 @@ export const Footer: React.FC<FooterProps> = ({
       {/* Trust/Sandbox Info */}
       <Box
         flexGrow={isNarrow ? 0 : 1}
-        alignItems="flex-end"
+        alignItems="flex-start"
         justifyContent={isNarrow ? 'flex-start' : 'flex-end'}
         display="flex"
         paddingX={isNarrow ? 0 : 1}
