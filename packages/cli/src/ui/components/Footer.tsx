@@ -45,7 +45,6 @@ export const Footer: React.FC<FooterProps> = ({
       flexDirection={isNarrow ? 'column' : 'row'}
       alignItems={isNarrow ? 'flex-start' : 'center'}
     >
-
       {/* Gemini Label and Console Summary */}
       <Box alignItems="flex-start" paddingTop={isNarrow ? 1 : 0}>
         <Text color={theme.text.accent}>
@@ -99,13 +98,9 @@ export const Footer: React.FC<FooterProps> = ({
             </Text>
           </Text>
         ) : (
-          <Text color={theme.status.error}>
-            no sandbox
-          </Text>
+          <Text color={theme.status.error}>no sandbox</Text>
         )}
       </Box>
-
-
     </Box>
   );
 };
