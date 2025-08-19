@@ -50,8 +50,6 @@ export interface CustomTheme {
     focused?: string;
   };
   ui?: {
-    comment?: string;
-    symbol?: string;
     gradient?: string[];
   };
   status?: {
