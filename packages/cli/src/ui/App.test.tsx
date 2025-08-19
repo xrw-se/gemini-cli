@@ -248,6 +248,10 @@ vi.mock('./utils/updateCheck.js', () => ({
   checkForUpdates: vi.fn(),
 }));
 
+vi.mock('./hooks/useGitBranchName', () => ({
+  useGitBranchName: vi.fn(() => 'test-branch'),
+}));
+
 vi.mock('../config/auth.js', () => ({
   validateAuthMethod: vi.fn(),
 }));
