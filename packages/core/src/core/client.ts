@@ -42,9 +42,7 @@ import { ProxyAgent, setGlobalDispatcher } from 'undici';
 import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
 import { ideContext } from '../ide/ideContext.js';
-import {
-  logChatCompression,
-} from '../telemetry/loggers.js';
+import { logChatCompression } from '../telemetry/loggers.js';
 import {
   makeChatCompressionEvent,
   MalformedJsonResponseEvent,
