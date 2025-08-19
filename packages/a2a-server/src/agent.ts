@@ -10,14 +10,14 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { Message, Task as SDKTask, AgentCard } from '@a2a-js/sdk';
 import {
   TaskStore,
-  A2AExpressApp,
   AgentExecutor,
   AgentExecutionEvent,
   RequestContext,
   ExecutionEventBus,
   DefaultRequestHandler,
   InMemoryTaskStore,
-} from '@a2a-js/sdk/server'; // Import server components
+} from '@a2a-js/sdk/server';
+import { A2AExpressApp } from '@a2a-js/sdk/server/express'; // Import server components
 import {
   GeminiEventType,
   ToolCallRequestInfo,
@@ -89,6 +89,7 @@ const coderAgentCard: AgentCard = {
     organization: 'Google',
     url: 'https://google.com',
   },
+  protocolVersion: '1.0',
   version: '0.0.2', // Incremented version
   capabilities: {
     streaming: true,
