@@ -79,13 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
         {nightly && (
           <Box width="100%" flexDirection="row" justifyContent="flex-end">
-            {Colors.GradientColors ? (
-              <Gradient colors={Colors.GradientColors}>
-                <Text>v{version}</Text>
-              </Gradient>
-            ) : (
-              <Text>v{version}</Text>
-            )}
+            <Text>v{version}</Text>
           </Box>
         )}
       </Box>
