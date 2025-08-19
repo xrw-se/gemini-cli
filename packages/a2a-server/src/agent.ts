@@ -7,18 +7,17 @@
 import express from 'express';
 import { AsyncLocalStorage } from 'async_hooks';
 
+import { Message, Task as SDKTask, AgentCard } from '@a2a-js/sdk';
 import {
-  AgentCard,
   TaskStore,
   A2AExpressApp,
   AgentExecutor,
+  AgentExecutionEvent,
   RequestContext,
   ExecutionEventBus,
   DefaultRequestHandler,
   InMemoryTaskStore,
-  Message,
-  Task as SDKTask,
-} from '@a2a-js/sdk'; // Import server components
+} from '@a2a-js/sdk/server'; // Import server components
 import {
   GeminiEventType,
   ToolCallRequestInfo,
@@ -91,7 +90,6 @@ const coderAgentCard: AgentCard = {
     url: 'https://google.com',
   },
   version: '0.0.2', // Incremented version
-  protocolVersion: '1.0',
   capabilities: {
     streaming: true,
     pushNotifications: false,
@@ -338,7 +336,9 @@ class CoderAgentExecutor implements AgentExecutor {
     logger.info(
       `[CoderAgentExecutor] userMessage: ${JSON.stringify(userMessage)}`,
     );
-    eventBus.on('event', (event: any) => logger.info('[EventBus event]: ', event));
+    eventBus.on('event', (event: AgentExecutionEvent) =>
+      logger.info('[EventBus event]: ', event),
+    );
 
     const store = requestStorage.getStore();
     if (!store) {
@@ -422,7 +422,9 @@ class CoderAgentExecutor implements AgentExecutor {
       }
     } else {
       logger.info(`[CoderAgentExecutor] Creating new task ${taskId}.`);
-      const agentSettings = userMessage.metadata?.['coderAgent'] as AgentSettings;
+      const agentSettings = userMessage.metadata?.[
+        'coderAgent'
+      ] as AgentSettings;
       wrapper = await this.createTask(
         taskId,
         contextId as string,

@@ -8,6 +8,9 @@
   "workspaces": [
     "packages/*"
   ],
+  "overrides": {
+    "@types/express": "^4.17.23"
+  },
   "private": "true",
   "repository": {
     "type": "git",

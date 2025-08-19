@@ -542,10 +542,12 @@ describe('A2A Protocol Endpoints', () => {
     });
 
     const writeFileTool = new WriteFileTool(config);
-    const executeSpy = vi.spyOn(writeFileTool, 'execute').mockResolvedValue({
-      llmContent: 'Tool executed successfully.',
-      returnDisplay: 'Tool executed successfully.',
-    });
+    const executeSpy = vi
+      .spyOn(writeFileTool, 'buildAndExecute')
+      .mockResolvedValue({
+        llmContent: 'Tool executed successfully.',
+        returnDisplay: 'Tool executed successfully.',
+      });
 
     getToolRegistrySpy.mockResolvedValue({
       getAllTools: vi.fn().mockReturnValue([writeFileTool]),

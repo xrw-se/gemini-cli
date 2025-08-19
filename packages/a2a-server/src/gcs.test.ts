@@ -10,7 +10,8 @@ import { promises as fsPromises, createReadStream } from 'node:fs';
 import * as tar from 'tar';
 import { gzipSync, gunzipSync } from 'zlib';
 import { v4 as uuidv4 } from 'uuid';
-import { Task as SDKTask, TaskStore } from '@a2a-js/sdk';
+import { Task as SDKTask } from '@a2a-js/sdk';
+import { TaskStore } from '@a2a-js/sdk/server';
 import {
   describe,
   it,

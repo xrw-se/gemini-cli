@@ -45,6 +45,7 @@
     "ink-select-input": "^6.2.0",
     "ink-spinner": "^5.0.0",
     "lowlight": "^3.3.0",
+    "memfs": "^4.36.3",
     "mime-types": "^3.0.1",
     "open": "^10.1.2",
     "react": "^19.1.0",
@@ -60,6 +61,7 @@
   },
   "devDependencies": {
     "@babel/runtime": "^7.27.6",
+    "@google/gemini-cli-test-utils": "file:../test-utils",
     "@testing-library/react": "^16.3.0",
     "@types/command-exists": "^1.2.3",
     "@types/diff": "^7.0.2",
@@ -75,8 +77,7 @@
     "pretty-format": "^30.0.2",
     "react-dom": "^19.1.0",
     "typescript": "^5.3.3",
-    "vitest": "^3.1.1",
-    "@google/gemini-cli-test-utils": "file:../test-utils"
+    "vitest": "^3.1.1"
   },
   "engines": {
     "node": ">=20"

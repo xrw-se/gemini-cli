@@ -24,6 +24,7 @@ import {
   UserTierId,
   parseAndFormatApiError,
 } from '@google/gemini-cli-core';
+import { RequestContext, ExecutionEventBus } from '@a2a-js/sdk/server';
 import {
   TaskStatusUpdateEvent,
   TaskArtifactUpdateEvent,
@@ -31,8 +32,6 @@ import {
   Message,
   Part,
   Artifact,
-  RequestContext,
-  ExecutionEventBus,
 } from '@a2a-js/sdk';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from './logger.js';
@@ -441,11 +440,11 @@ export class Task {
 
     // For WaitingToolCall type
     if ('confirmationDetails' in tc) {
-      serializableToolCall.confirmationDetails = tc.confirmationDetails;
+      serializableToolCall['confirmationDetails'] = tc.confirmationDetails;
     }
 
     if (tc.tool) {
-      serializableToolCall.tool = {
+      serializableToolCall['tool'] = {
         name: tc.tool.name,
         displayName: tc.tool.displayName,
         description: tc.tool.description,
@@ -635,14 +634,14 @@ export class Task {
     if (
       part.kind !== 'data' ||
       !part.data ||
-      typeof part.data.callId !== 'string' ||
-      typeof part.data.outcome !== 'string'
+      typeof part.data['callId'] !== 'string' ||
+      typeof part.data['outcome'] !== 'string'
     ) {
       return false;
     }
 
-    const callId = part.data.callId as string;
-    const outcomeString = part.data.outcome as string;
+    const callId = part.data['callId'] as string;
+    const outcomeString = part.data['outcome'] as string;
     let confirmationOutcome: ToolConfirmationOutcome | undefined;
 
     if (outcomeString === 'proceed_once') {
@@ -690,9 +689,9 @@ export class Task {
 
         // If `edit` tool call, pass updated payload if presesent
         if (confirmationDetails.type === 'edit') {
-          const payload = part.data.newContent
+          const payload = part.data['newContent']
             ? ({
-                newContent: part.data.newContent as string,
+                newContent: part.data['newContent'] as string,
               } as ToolConfirmationPayload)
             : undefined;
           this.skipFinalTrueAfterInlineEdit = !!payload;
