@@ -79,6 +79,6 @@ describe('<Header />', () => {
       />,
     );
     expect(lastFrame()).toContain('/test/dir');
-    expect(lastFrame()).toContain('(test-branch*)');
+    expect(lastFrame()).toContain('(test-branch)');
   });
 });
