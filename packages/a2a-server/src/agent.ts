@@ -89,7 +89,7 @@ const coderAgentCard: AgentCard = {
     organization: 'Google',
     url: 'https://google.com',
   },
-  protocolVersion: '1.0',
+  protocolVersion: '0.3.0',
   version: '0.0.2', // Incremented version
   capabilities: {
     streaming: true,
@@ -667,7 +667,7 @@ async function main() {
         `[CoreAgent] Agent Server started on http://localhost:${actualPort}`,
       );
       logger.info(
-        `[CoreAgent] Agent Card: http://localhost:${actualPort}/.well-known/agent.json`,
+        `[CoreAgent] Agent Card: http://localhost:${actualPort}/.well-known/agent-card.json`,
       );
       logger.info('[CoreAgent] Press Ctrl+C to stop the server');
     });
@@ -711,7 +711,6 @@ export async function createApp() {
 
     const appBuilder = new A2AExpressApp(requestHandler);
     expressApp = appBuilder.setupRoutes(expressApp, '');
-
     expressApp.use(express.json());
 
     expressApp.post('/tasks', async (req, res) => {

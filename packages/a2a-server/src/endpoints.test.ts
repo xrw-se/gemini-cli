@@ -17,13 +17,13 @@ import { AddressInfo } from 'net';
 
 // Mock the logger to avoid polluting test output
 // Uncomment to help debug
-vi.mock('./logger.js', () => ({
-  logger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
-}));
+// vi.mock('./logger.js', () => ({
+//   logger: {
+//     info: vi.fn(),
+//     warn: vi.fn(),
+//     error: vi.fn(),
+//   },
+// }));
 
 // Mock Task.create to avoid its complex setup
 vi.mock('./task.js', () => {
@@ -83,10 +83,13 @@ describe('Agent Server Endpoints', () => {
       path.join(os.tmpdir(), 'gemini-agent-test-'),
     );
     app = await createApp();
-    server = app.listen(0, () => {
-      const port = (server.address() as AddressInfo).port;
-      updateCoderAgentCardUrl(port);
-    }); // Listen on a random available port
+    await new Promise<void>((resolve) => {
+      server = app.listen(0, () => {
+        const port = (server.address() as AddressInfo).port;
+        updateCoderAgentCardUrl(port);
+        resolve();
+      });
+    });
   });
 
   afterAll(
@@ -127,14 +130,12 @@ describe('Agent Server Endpoints', () => {
   });
 
   it('should return 404 for a non-existent task', async () => {
-    const response = await request(app).get(
-      '/tasks/non-existent-task/metadata',
-    );
+    const response = await request(app).get('/tasks/fake-task/metadata');
     expect(response.status).toBe(404);
   });
 
-  it('should return agent metadata via GET /.well-known/agent.json', async () => {
-    const response = await request(app).get('/.well-known/agent.json');
+  it('should return agent metadata via GET /.well-known/agent-card.json', async () => {
+    const response = await request(app).get('/.well-known/agent-card.json');
     const port = (server.address() as AddressInfo).port;
     expect(response.status).toBe(200);
     expect(response.body.name).toBe('Gemini SDLC Agent');
