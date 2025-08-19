@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { Text, Box } from 'ink';
+import { RenderInline } from '../../utils/InlineMarkdownRenderer.js';
 import { theme } from '../../semantic-colors.js';
 
 interface InfoMessageProps {
@@ -23,7 +24,7 @@ export const InfoMessage: React.FC<InfoMessageProps> = ({ text }) => {
       </Box>
       <Box flexGrow={1}>
         <Text wrap="wrap" color={theme.status.warning}>
-          {text}
+          <RenderInline text={text} />
         </Text>
       </Box>
     </Box>

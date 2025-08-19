@@ -163,7 +163,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
 }) => {
   const { stats } = useSessionStats();
   const { metrics } = stats;
-  const { models, tools } = metrics;
+  const { models, tools, files } = metrics;
   const computed = computeSessionStats(metrics);
 
   const successThresholds = {
@@ -210,33 +210,44 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
       {renderTitle()}
       <Box height={1} />
 
-      {tools.totalCalls > 0 && (
-        <Section title="Interaction Summary">
-          <StatRow title="Session ID:">
-            <Text>{stats.sessionId}</Text>
-          </StatRow>
-          <StatRow title="Tool Calls:">
-            <Text color={theme.text.primary}>
-              {tools.totalCalls} ({' '}
-              <Text color={theme.status.success}>✔ {tools.totalSuccess}</Text>{' '}
-              <Text color={theme.status.error}>✖ {tools.totalFail}</Text> )
+      <Section title="Interaction Summary">
+        <StatRow title="Session ID:">
+          <Text>{stats.sessionId}</Text>
+        </StatRow>
+        <StatRow title="Tool Calls:">
+          <Text>
+            {tools.totalCalls} ({' '}
+            <Text color={theme.status.success}>✔ {tools.totalSuccess}</Text>{' '}
+            <Text color={theme.status.error}>✖ {tools.totalFail}</Text> )
+          </Text>
+        </StatRow>
+        <StatRow title="Success Rate:">
+          <Text color={successColor}>{computed.successRate.toFixed(1)}%</Text>
+        </StatRow>
+        {computed.totalDecisions > 0 && (
+          <StatRow title="User Agreement:">
+            <Text color={agreementColor}>
+              {computed.agreementRate.toFixed(1)}%{' '}
+              <Text color={theme.text.secondary}>
+                ({computed.totalDecisions} reviewed)
+              </Text>
             </Text>
           </StatRow>
-          <StatRow title="Success Rate:">
-            <Text color={successColor}>{computed.successRate.toFixed(1)}%</Text>
-          </StatRow>
-          {computed.totalDecisions > 0 && (
-            <StatRow title="User Agreement:">
-              <Text color={agreementColor}>
-                {computed.agreementRate.toFixed(1)}%{' '}
-                <Text color={theme.text.secondary}>
-                  ({computed.totalDecisions} reviewed)
+        )}
+        {files &&
+          (files.totalLinesAdded > 0 || files.totalLinesRemoved > 0) && (
+            <StatRow title="Code Changes:">
+              <Text>
+                <Text color={theme.status.success}>
+                  +{files.totalLinesAdded}
+                </Text>{' '}
+                <Text color={theme.status.error}>
+                  -{files.totalLinesRemoved}
                 </Text>
               </Text>
             </StatRow>
           )}
-        </Section>
-      )}
+      </Section>
 
       <Section title="Performance">
         <StatRow title="Wall Time:">

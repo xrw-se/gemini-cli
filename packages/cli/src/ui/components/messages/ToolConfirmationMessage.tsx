@@ -7,6 +7,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { DiffRenderer } from './DiffRenderer.js';
+import { RenderInline } from '../../utils/InlineMarkdownRenderer.js';
 import { theme } from '../../semantic-colors.js';
 import {
   ToolCallConfirmationDetails,
@@ -222,14 +223,16 @@ export const ToolConfirmationMessage: React.FC<
 
     bodyContent = (
       <Box flexDirection="column" paddingX={1} marginLeft={1}>
-        <Text color={theme.text.accent}>{infoProps.prompt}</Text>
+        <Text color={theme.text.accent}>
+          <RenderInline text={infoProps.prompt} />
+        </Text>
         {displayUrls && infoProps.urls && infoProps.urls.length > 0 && (
           <Box flexDirection="column" marginTop={1}>
             <Text color={theme.text.primary}>URLs to fetch:</Text>
             {infoProps.urls.map((url) => (
               <Text key={url} color={theme.text.primary}>
                 {' '}
-                - {url}
+                - <RenderInline text={url} />
               </Text>
             ))}
           </Box>
