@@ -73,22 +73,19 @@ export const Header: React.FC<HeaderProps> = ({
         flexDirection={isNarrow ? 'column' : 'row'}
         alignItems={isNarrow ? 'flex-start' : 'center'}
       >
-        <Box>
-          {nightly ? (
-            <Gradient colors={theme.ui.gradient}>
-              <Text>
-                {displayPath}
-                {branchName && <Text> ({branchName}*)</Text>}
-              </Text>
-            </Gradient>
-          ) : (
-            <Text color={theme.text.link}>
-              {displayPath}
-              {branchName && (
-                <Text color={theme.text.secondary}> ({branchName}*)</Text>
-              )}
-            </Text>
-          )}
+        <Box
+          borderStyle="round"
+          borderColor={theme.border.default}
+          paddingLeft={1}
+          paddingRight={1}
+        >
+          <Text color={theme.text.secondary}>cwd: </Text>
+          <Text color={theme.text.link}>
+            {displayPath}
+            {branchName && (
+              <Text color={theme.text.secondary}> ({branchName})</Text>
+            )}
+          </Text>
         </Box>
         {nightly && (
           <Box width="100%" flexDirection="row" justifyContent="flex-end">
