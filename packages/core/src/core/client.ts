@@ -42,7 +42,13 @@ import { ProxyAgent, setGlobalDispatcher } from 'undici';
 import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
 import { ideContext } from '../ide/ideContext.js';
-import { MalformedJsonResponseEvent } from '../telemetry/types.js';
+import {
+  logChatCompression,
+} from '../telemetry/loggers.js';
+import {
+  makeChatCompressionEvent,
+  MalformedJsonResponseEvent,
+} from '../telemetry/types.js';
 import { ClearcutLogger } from '../telemetry/clearcut-logger/clearcut-logger.js';
 import { IdeContext, File } from '../ide/ideContext.js';
 
@@ -84,6 +90,20 @@ export function findIndexAfterFraction(
   return contentLengths.length;
 }
 
+const MAX_TURNS = 100;
+
+/**
+ * Threshold for compression token count as a fraction of the model's token limit.
+ * If the chat history exceeds this threshold, it will be compressed.
+ */
+const COMPRESSION_TOKEN_THRESHOLD = 0.7;
+
+/**
+ * The fraction of the latest chat history to keep. A value of 0.3
+ * means that only the last 30% of the chat history will be kept after compression.
+ */
+const COMPRESSION_PRESERVE_THRESHOLD = 0.3;
+
 export class GeminiClient {
   private chat?: GeminiChat;
   private contentGenerator?: ContentGenerator;
@@ -93,17 +113,6 @@ export class GeminiClient {
     topP: 1,
   };
   private sessionTurnCount = 0;
-  private readonly MAX_TURNS = 100;
-  /**
-   * Threshold for compression token count as a fraction of the model's token limit.
-   * If the chat history exceeds this threshold, it will be compressed.
-   */
-  private readonly COMPRESSION_TOKEN_THRESHOLD = 0.7;
-  /**
-   * The fraction of the latest chat history to keep. A value of 0.3
-   * means that only the last 30% of the chat history will be kept after compression.
-   */
-  private readonly COMPRESSION_PRESERVE_THRESHOLD = 0.3;
 
   private readonly loopDetector: LoopDetectionService;
   private lastPromptId: string;
@@ -433,7 +442,7 @@ export class GeminiClient {
     request: PartListUnion,
     signal: AbortSignal,
     prompt_id: string,
-    turns: number = this.MAX_TURNS,
+    turns: number = MAX_TURNS,
     _originalModel?: string,
   ): AsyncGenerator<ServerGeminiStreamEvent, Turn> {
     if (this.lastPromptId !== prompt_id) {
@@ -449,7 +458,7 @@ export class GeminiClient {
       return new Turn(this.getChat(), prompt_id);
     }
     // Ensure turns never exceeds MAX_TURNS to prevent infinite loops
-    const boundedTurns = Math.min(turns, this.MAX_TURNS);
+    const boundedTurns = Math.min(turns, MAX_TURNS);
     if (!boundedTurns) {
       return new Turn(this.getChat(), prompt_id);
     }
@@ -630,7 +639,7 @@ export class GeminiClient {
       const userMemory = this.config.getUserMemory();
       const systemInstruction = getCoreSystemPrompt(userMemory);
 
-      const requestConfig = {
+      const requestConfig: GenerateContentConfig = {
         abortSignal,
         ...configToUse,
         systemInstruction,
@@ -736,7 +745,7 @@ export class GeminiClient {
     // Don't compress if not forced and we are under the limit.
     if (!force) {
       const threshold =
-        contextPercentageThreshold ?? this.COMPRESSION_TOKEN_THRESHOLD;
+        contextPercentageThreshold ?? COMPRESSION_TOKEN_THRESHOLD;
       if (originalTokenCount < threshold * tokenLimit(model)) {
         return null;
       }
@@ -744,7 +753,7 @@ export class GeminiClient {
 
     let compressBeforeIndex = findIndexAfterFraction(
       curatedHistory,
-      1 - this.COMPRESSION_PRESERVE_THRESHOLD,
+      1 - COMPRESSION_PRESERVE_THRESHOLD,
     );
     // Find the first user message after the index. This is the start of the next turn.
     while (
@@ -794,6 +803,14 @@ export class GeminiClient {
       console.warn('Could not determine compressed history token count.');
       return null;
     }
+
+    logChatCompression(
+      this.config,
+      makeChatCompressionEvent({
+        tokens_before: originalTokenCount,
+        tokens_after: newTokenCount,
+      }),
+    );
 
     return {
       originalTokenCount,
@@ -848,3 +865,8 @@ export class GeminiClient {
     return null;
   }
 }
+
+export const TEST_ONLY = {
+  COMPRESSION_PRESERVE_THRESHOLD,
+  COMPRESSION_TOKEN_THRESHOLD,
+};
