@@ -16,14 +16,10 @@ import type { TaskMetadata } from './types.js';
 import { AddressInfo } from 'net';
 
 // Mock the logger to avoid polluting test output
-// Uncomment to help debug
-// vi.mock('./logger.js', () => ({
-//   logger: {
-//     info: vi.fn(),
-//     warn: vi.fn(),
-//     error: vi.fn(),
-//   },
-// }));
+// Comment out to help debug
+vi.mock('./logger.js', () => ({
+  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
 
 // Mock Task.create to avoid its complex setup
 vi.mock('./task.js', () => {

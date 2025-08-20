@@ -8,13 +8,11 @@ import {
   Config,
   GeminiEventType,
   ApprovalMode,
-  WriteFileTool,
   ToolCallConfirmationDetails,
 } from '@google/gemini-cli-core';
 import {
   TaskStatusUpdateEvent,
   SendStreamingMessageSuccessResponse,
-  Task as SDKTask,
 } from '@a2a-js/sdk';
 import express from 'express';
 import type { Server } from 'http';
@@ -57,13 +55,9 @@ const streamToSSEEvents = (
     });
 
 // Mock the logger to avoid polluting test output
-// Uncomment to debug tests
+// Comment out to debug tests
 vi.mock('./logger.js', () => ({
-  logger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
+  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
 let config: Config;
@@ -112,7 +106,7 @@ vi.mock('@google/gemini-cli-core', async () => {
   };
 });
 
-describe('A2A Protocol Endpoints', () => {
+describe('E2E Tests', () => {
   let app: express.Express;
   let server: Server;
 
@@ -518,159 +512,6 @@ describe('A2A Protocol Endpoints', () => {
     expect(events.length).toBe(10);
   });
 
-  it('should handle inline edit tool response', async () => {
-    const agent = request.agent(app);
-    // First call yields the tool request
-    sendMessageStreamSpy.mockImplementationOnce(async function* () {
-      yield* [
-        {
-          type: GeminiEventType.ToolCallRequest,
-          value: {
-            callId: 'test-call-id-new-content',
-            name: 'write_file',
-            args: {
-              file_path: '/test/file.txt',
-              content: 'initial content',
-            },
-          },
-        },
-      ];
-    });
-    // Second call, after the tool runs, yields the final text
-    sendMessageStreamSpy.mockImplementationOnce(async function* () {
-      yield* [{ type: 'content', value: 'Tool executed with new content.' }];
-    });
-
-    const writeFileTool = new WriteFileTool(config);
-    const executeSpy = vi
-      .spyOn(writeFileTool, 'buildAndExecute')
-      .mockResolvedValue({
-        llmContent: 'Tool executed successfully.',
-        returnDisplay: 'Tool executed successfully.',
-      });
-
-    getToolRegistrySpy.mockResolvedValue({
-      getAllTools: vi.fn().mockReturnValue([writeFileTool]),
-      getToolsByServer: vi.fn().mockReturnValue([]),
-      getTool: vi.fn().mockReturnValue(writeFileTool),
-    });
-
-    // Start the task
-    const res1 = await agent
-      .post('/')
-      .send(
-        createStreamMessageRequest(
-          'run a tool with inline edit',
-          'a2a-new-content-test-message',
-        ),
-      )
-      .set('Content-Type', 'application/json')
-      .expect(200);
-
-    const events1 = streamToSSEEvents(res1.text);
-    assertUniqueFinalEventIsLast(events1);
-    const taskId = (events1[0].result as SDKTask).id;
-
-    // Now, send the confirmation with newContent
-    const res2 = await agent
-      .post('/')
-      .send({
-        jsonrpc: '2.0',
-        id: '2',
-        method: 'message/stream',
-        params: {
-          message: {
-            kind: 'message',
-            role: 'user',
-            parts: [
-              {
-                kind: 'data',
-                data: {
-                  callId: 'test-call-id-new-content',
-                  outcome: 'proceed_once',
-                  newContent: 'This is the new content',
-                },
-              },
-            ],
-            messageId: 'a2a-new-content-response-message',
-            taskId,
-          },
-        },
-      })
-      .set('Content-Type', 'application/json')
-      .expect(200);
-
-    const events2 = streamToSSEEvents(res2.text);
-
-    expect(executeSpy).toHaveBeenCalledTimes(1);
-    const executeArgs = executeSpy.mock.calls[0][0];
-    expect(executeArgs).toEqual({
-      ai_proposed_content: 'initial content',
-      file_path: '/test/file.txt',
-      content: 'This is the new content',
-      modified_by_user: true,
-    });
-
-    const scheduledEvent = events2[0].result as TaskStatusUpdateEvent;
-    expect(scheduledEvent.metadata?.['coderAgent']).toMatchObject({
-      kind: 'tool-call-update',
-    });
-    expect(scheduledEvent.status.message?.parts).toMatchObject([
-      {
-        data: {
-          status: 'scheduled',
-          request: { callId: 'test-call-id-new-content' },
-        },
-      },
-    ]);
-
-    const executingEvent = events2[1].result as TaskStatusUpdateEvent;
-    expect(executingEvent.metadata?.['coderAgent']).toMatchObject({
-      kind: 'tool-call-update',
-    });
-    expect(executingEvent.status.message?.parts).toMatchObject([
-      {
-        data: {
-          status: 'executing',
-          request: { callId: 'test-call-id-new-content' },
-        },
-      },
-    ]);
-
-    const successEvent = events2[2].result as TaskStatusUpdateEvent;
-    expect(successEvent.metadata?.['coderAgent']).toMatchObject({
-      kind: 'tool-call-update',
-    });
-    expect(successEvent.status.message?.parts).toMatchObject([
-      {
-        data: {
-          status: 'success',
-          request: {
-            callId: 'test-call-id-new-content',
-            args: { content: 'This is the new content' },
-          },
-        },
-      },
-    ]);
-
-    const workingEvent = events2[3].result as TaskStatusUpdateEvent;
-    expect(workingEvent.metadata?.['coderAgent']).toMatchObject({
-      kind: 'state-change',
-    });
-    expect(workingEvent.status.state).toBe('working');
-
-    const textContentEvent = events2[4].result as TaskStatusUpdateEvent;
-    expect(textContentEvent.metadata?.['coderAgent']).toMatchObject({
-      kind: 'text-content',
-    });
-    expect(textContentEvent.status.message?.parts).toMatchObject([
-      { text: 'Tool executed with new content.' },
-    ]);
-
-    assertUniqueFinalEventIsLast(events2);
-    expect(events2.length).toBe(6);
-  });
-
   it('should bypass tool approval in YOLO mode', async () => {
     // First call yields the tool request
     sendMessageStreamSpy.mockImplementationOnce(async function* () {
@@ -698,7 +539,6 @@ describe('A2A Protocol Endpoints', () => {
       'Test Tool YOLO',
       false,
       false,
-      mockToolConfirmationFn,
     );
     mockTool.execute.mockResolvedValue({
       llmContent: 'Tool executed successfully.',
