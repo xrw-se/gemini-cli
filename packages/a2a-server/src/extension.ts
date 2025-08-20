@@ -10,6 +10,7 @@ import { MCPServerConfig } from '@google/gemini-cli-core';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import {logger} from './logger.js';
 
 export const EXTENSIONS_DIRECTORY_NAME = path.join('.gemini', 'extensions');
 export const EXTENSIONS_CONFIG_FILENAME = 'gemini-extension.json';
@@ -36,7 +37,7 @@ export function loadExtensions(workspaceDir: string): Extension[] {
   const seenNames = new Set<string>();
   for (const extension of allExtensions) {
     if (!seenNames.has(extension.config.name)) {
-      console.log(
+      logger.info(
         `Loading extension: ${extension.config.name} (version: ${extension.config.version})`,
       );
       uniqueExtensions.push(extension);
@@ -67,7 +68,7 @@ function loadExtensionsFromDir(dir: string): Extension[] {
 
 function loadExtension(extensionDir: string): Extension | null {
   if (!fs.statSync(extensionDir).isDirectory()) {
-    console.error(
+    logger.error(
       `Warning: unexpected file ${extensionDir} in extensions directory.`,
     );
     return null;
@@ -75,7 +76,7 @@ function loadExtension(extensionDir: string): Extension | null {
 
   const configFilePath = path.join(extensionDir, EXTENSIONS_CONFIG_FILENAME);
   if (!fs.existsSync(configFilePath)) {
-    console.error(
+    logger.error(
       `Warning: extension directory ${extensionDir} does not contain a config file ${configFilePath}.`,
     );
     return null;
@@ -85,7 +86,7 @@ function loadExtension(extensionDir: string): Extension | null {
     const configContent = fs.readFileSync(configFilePath, 'utf-8');
     const config = JSON.parse(configContent) as ExtensionConfig;
     if (!config.name || !config.version) {
-      console.error(
+      logger.error(
         `Invalid extension config in ${configFilePath}: missing name or version.`,
       );
       return null;
@@ -100,7 +101,7 @@ function loadExtension(extensionDir: string): Extension | null {
       contextFiles,
     };
   } catch (e) {
-    console.error(
+    logger.error(
       `Warning: error parsing extension config in ${configFilePath}: ${e}`,
     );
     return null;
