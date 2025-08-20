@@ -60,6 +60,25 @@ After one week (On the following Tuesday) with all signals a go, we will manuall
 
 If a bug or feature fix is found and needed before the next weekly release is out.
 
+### Automated Cherry-picking (Recommended)
+
+For fixes that have already been merged to main via a pull request, use the automated cherry-picking workflow:
+
+**Option 1: Comment on the PR**
+```
+/cherry-pick to release/v0.2.0 --patch v0.2.1
+```
+
+**Option 2: Manual workflow trigger**
+1. Go to the [Actions tab](https://github.com/google-gemini/gemini-cli/actions/workflows/cherry-pick-to-release.yml)
+2. Click "Run workflow" on the "Cherry-pick to Release Branch" workflow and provide the PR number and target release information
+
+See [cherry-picking.md](cherry-picking.md) for detailed instructions and examples.
+
+### Manual Process
+
+For cases where automated cherry-picking isn't suitable:
+
 - Create a new branch from the appropriate source
   - For a patch release of a preview, start with the release/x.y.z-preview.n branch and create a new branch off of that.
   - For a patch release of an existing version, we'll utilize the git TAG that is automatically created with each release to ensure we pull the exact commit. The format is `v.x.y.z`. Run `git checkout vx.x.x -b &lt;hotfix branch name ideally an issue number>` to pull the tag and create a branch local.

@@ -1,0 +1,242 @@
+name: 'Cherry-pick to Release Branch'
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'The pull request number to cherry-pick'
+        required: true
+        type: 'string'
+      target_release_branch:
+        description: 'Target release branch (e.g., release/v0.2.0-preview.1 or release/v0.2.0)'
+        required: true
+        type: 'string'
+      create_patch_release:
+        description: 'Create a new patch release branch instead of using existing one'
+        required: false
+        type: 'boolean'
+        default: false
+      patch_version:
+        description: 'New patch version (e.g., v0.2.1) - required if create_patch_release is true'
+        required: false
+        type: 'string'
+  workflow_call:
+    inputs:
+      pr_number:
+        description: 'The pull request number to cherry-pick'
+        required: true
+        type: 'string'
+      target_release_branch:
+        description: 'Target release branch (e.g., release/v0.2.0-preview.1 or release/v0.2.0)'
+        required: true
+        type: 'string'
+      create_patch_release:
+        description: 'Create a new patch release branch instead of using existing one'
+        required: false
+        type: 'boolean'
+        default: false
+      patch_version:
+        description: 'New patch version (e.g., v0.2.1) - required if create_patch_release is true'
+        required: false
+        type: 'string'
+
+permissions:
+  contents: 'write'
+  pull-requests: 'write'
+  issues: 'write'
+
+jobs:
+  cherry-pick:
+    name: 'Cherry-pick PR to Release Branch'
+    runs-on: 'ubuntu-latest'
+    if: |-
+      ${{ github.repository == 'google-gemini/gemini-cli' }}
+    
+    steps:
+      - name: 'Checkout repository'
+        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: 'Configure Git'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 'Validate inputs'
+        run: |
+          if [[ "${{ inputs.create_patch_release }}" == "true" && -z "${{ inputs.patch_version }}" ]]; then
+            echo "::error::patch_version is required when create_patch_release is true"
+            exit 1
+          fi
+          
+          if [[ "${{ inputs.pr_number }}" !~ ^[0-9]+$ ]]; then
+            echo "::error::pr_number must be a valid number"
+            exit 1
+          fi
+
+      - name: 'Get PR information'
+        id: 'pr_info'
+        run: |
+          PR_DATA=$(gh pr view "${{ inputs.pr_number }}" --json headRefOid,title,author,url,mergeCommit)
+          echo "PR_TITLE=$(echo "$PR_DATA" | jq -r '.title')" >> $GITHUB_OUTPUT
+          echo "PR_AUTHOR=$(echo "$PR_DATA" | jq -r '.author.login')" >> $GITHUB_OUTPUT
+          echo "PR_URL=$(echo "$PR_DATA" | jq -r '.url')" >> $GITHUB_OUTPUT
+          echo "MERGE_COMMIT=$(echo "$PR_DATA" | jq -r '.mergeCommit.oid // .headRefOid')" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: 'Create patch release branch'
+        if: inputs.create_patch_release == true
+        run: |
+          # Parse the base version from target branch name
+          BASE_VERSION=$(echo "${{ inputs.target_release_branch }}" | sed 's|^release/||' | sed 's|-preview.*||')
+          TARGET_BRANCH="release/${{ inputs.patch_version }}"
+          
+          echo "Creating new patch release branch: $TARGET_BRANCH from ${{ inputs.target_release_branch }}"
+          
+          # Check if target release branch exists
+          if ! git show-ref --verify --quiet "refs/remotes/origin/${{ inputs.target_release_branch }}"; then
+            echo "::error::Target release branch ${{ inputs.target_release_branch }} does not exist"
+            exit 1
+          fi
+          
+          # Create new patch branch from the target release branch
+          git checkout -b "$TARGET_BRANCH" "origin/${{ inputs.target_release_branch }}"
+          
+          # Update the PATCH_BRANCH_NAME for subsequent steps
+          echo "PATCH_BRANCH_NAME=$TARGET_BRANCH" >> $GITHUB_ENV
+
+      - name: 'Set working branch'
+        run: |
+          if [[ "${{ inputs.create_patch_release }}" == "true" ]]; then
+            WORKING_BRANCH="$PATCH_BRANCH_NAME"
+          else
+            WORKING_BRANCH="${{ inputs.target_release_branch }}"
+            # Check if the target branch exists
+            if ! git show-ref --verify --quiet "refs/remotes/origin/$WORKING_BRANCH"; then
+              echo "::error::Target release branch $WORKING_BRANCH does not exist"
+              exit 1
+            fi
+            git checkout -b "cherry-pick-pr-${{ inputs.pr_number }}-to-$(echo $WORKING_BRANCH | sed 's|/|-|g')" "origin/$WORKING_BRANCH"
+          fi
+          echo "WORKING_BRANCH=$WORKING_BRANCH" >> $GITHUB_ENV
+
+      - name: 'Cherry-pick commit'
+        id: 'cherry_pick'
+        run: |
+          echo "Cherry-picking commit ${{ steps.pr_info.outputs.MERGE_COMMIT }} from PR #${{ inputs.pr_number }}"
+          
+          if git cherry-pick "${{ steps.pr_info.outputs.MERGE_COMMIT }}"; then
+            echo "SUCCESS=true" >> $GITHUB_OUTPUT
+            echo "Cherry-pick successful"
+          else
+            echo "SUCCESS=false" >> $GITHUB_OUTPUT
+            echo "CONFLICT_FILES<<EOF" >> $GITHUB_OUTPUT
+            git diff --name-only --diff-filter=U >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            
+            # Abort the cherry-pick
+            git cherry-pick --abort
+            echo "::error::Cherry-pick failed due to conflicts"
+          fi
+
+      - name: 'Handle cherry-pick conflicts'
+        if: steps.cherry_pick.outputs.SUCCESS == 'false'
+        run: |
+          echo "Cherry-pick failed with conflicts in the following files:"
+          echo "${{ steps.cherry_pick.outputs.CONFLICT_FILES }}"
+          
+          # Create an issue for manual resolution
+          gh issue create \
+            --title "Cherry-pick conflict: PR #${{ inputs.pr_number }} to ${{ env.WORKING_BRANCH }}" \
+            --body "## Cherry-pick Conflict
+          
+          The automated cherry-pick of PR #${{ inputs.pr_number }} to branch \`${{ env.WORKING_BRANCH }}\` failed due to conflicts.
+          
+          **Original PR:** ${{ steps.pr_info.outputs.PR_URL }}
+          **PR Title:** ${{ steps.pr_info.outputs.PR_TITLE }}
+          **PR Author:** @${{ steps.pr_info.outputs.PR_AUTHOR }}
+          **Target Branch:** \`${{ env.WORKING_BRANCH }}\`
+          **Commit:** ${{ steps.pr_info.outputs.MERGE_COMMIT }}
+          
+          **Conflicting Files:**
+          \`\`\`
+          ${{ steps.cherry_pick.outputs.CONFLICT_FILES }}
+          \`\`\`
+          
+          **Manual Resolution Required:**
+          1. Check out the target branch: \`git checkout ${{ env.WORKING_BRANCH }}\`
+          2. Cherry-pick the commit: \`git cherry-pick ${{ steps.pr_info.outputs.MERGE_COMMIT }}\`
+          3. Resolve conflicts manually
+          4. Complete the cherry-pick: \`git cherry-pick --continue\`
+          5. Push the changes or create a pull request
+          
+          /cc @${{ steps.pr_info.outputs.PR_AUTHOR }}" \
+            --label "release-failure"
+          
+          exit 1
+        env:
+          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: 'Push changes'
+        if: steps.cherry_pick.outputs.SUCCESS == 'true'
+        run: |
+          if [[ "${{ inputs.create_patch_release }}" == "true" ]]; then
+            # Push the new patch release branch
+            git push origin "$PATCH_BRANCH_NAME"
+            echo "Pushed new patch release branch: $PATCH_BRANCH_NAME"
+          else
+            # Push the cherry-pick branch and create a PR
+            BRANCH_NAME="cherry-pick-pr-${{ inputs.pr_number }}-to-$(echo ${{ env.WORKING_BRANCH }} | sed 's|/|-|g')"
+            git push origin "$BRANCH_NAME"
+            echo "CHERRY_PICK_BRANCH=$BRANCH_NAME" >> $GITHUB_ENV
+          fi
+
+      - name: 'Create Pull Request'
+        if: steps.cherry_pick.outputs.SUCCESS == 'true' && inputs.create_patch_release == false
+        run: |
+          gh pr create \
+            --base "${{ env.WORKING_BRANCH }}" \
+            --head "${{ env.CHERRY_PICK_BRANCH }}" \
+            --title "Cherry-pick: ${{ steps.pr_info.outputs.PR_TITLE }} (PR #${{ inputs.pr_number }})" \
+            --body "## Cherry-pick of PR #${{ inputs.pr_number }}
+          
+          This PR cherry-picks the changes from PR #${{ inputs.pr_number }} into the release branch \`${{ env.WORKING_BRANCH }}\`.
+          
+          **Original PR:** ${{ steps.pr_info.outputs.PR_URL }}
+          **Original Author:** @${{ steps.pr_info.outputs.PR_AUTHOR }}
+          **Cherry-picked Commit:** ${{ steps.pr_info.outputs.MERGE_COMMIT }}
+          
+          **Original PR Description:**
+          ${{ steps.pr_info.outputs.PR_TITLE }}
+          
+          Please review the cherry-picked changes and ensure they are appropriate for the release branch.
+          
+          /cc @${{ steps.pr_info.outputs.PR_AUTHOR }}" \
+            --label "cherry-pick,release"
+        env:
+          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: 'Summary'
+        if: steps.cherry_pick.outputs.SUCCESS == 'true'
+        run: |
+          echo "## Cherry-pick Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Successfully cherry-picked PR #${{ inputs.pr_number }} to ${{ env.WORKING_BRANCH }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Original PR:** ${{ steps.pr_info.outputs.PR_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "**PR Title:** ${{ steps.pr_info.outputs.PR_TITLE }}" >> $GITHUB_STEP_SUMMARY
+          echo "**PR Author:** @${{ steps.pr_info.outputs.PR_AUTHOR }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Cherry-picked Commit:** ${{ steps.pr_info.outputs.MERGE_COMMIT }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ inputs.create_patch_release }}" == "true" ]]; then
+            echo "**New Patch Release Branch:** \`$PATCH_BRANCH_NAME\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The changes have been applied to a new patch release branch. You can now run the release workflow using this branch." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Cherry-pick Branch:** \`${{ env.CHERRY_PICK_BRANCH }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "A pull request has been created for review. Please merge it to apply the changes to the release branch." >> $GITHUB_STEP_SUMMARY
+          fi

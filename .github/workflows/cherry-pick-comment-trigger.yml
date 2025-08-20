@@ -1,0 +1,105 @@
+name: 'Cherry-pick PR Comment Trigger'
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: 'write'
+  pull-requests: 'write'
+  issues: 'write'
+
+jobs:
+  trigger-cherry-pick:
+    name: 'Trigger Cherry-pick from Comment'
+    runs-on: 'ubuntu-latest'
+    if: |-
+      ${{ 
+        github.repository == 'google-gemini/gemini-cli' &&
+        github.event.issue.pull_request &&
+        contains(github.event.comment.body, '/cherry-pick') &&
+        (github.event.comment.author_association == 'MEMBER' || 
+         github.event.comment.author_association == 'OWNER' ||
+         github.event.comment.author_association == 'COLLABORATOR')
+      }}
+    
+    steps:
+      - name: 'Parse cherry-pick command'
+        id: 'parse_command'
+        run: |
+          COMMENT_BODY="${{ github.event.comment.body }}"
+          
+          # Extract the command line
+          COMMAND_LINE=$(echo "$COMMENT_BODY" | grep "/cherry-pick" | head -1)
+          
+          # Parse target branch
+          TARGET_BRANCH=$(echo "$COMMAND_LINE" | sed -n 's|.*/cherry-pick[[:space:]]\+to[[:space:]]\+\([^[:space:]]\+\).*|\1|p')
+          
+          # Check for --patch flag and version
+          if echo "$COMMAND_LINE" | grep -q -- "--patch"; then
+            CREATE_PATCH="true"
+            PATCH_VERSION=$(echo "$COMMAND_LINE" | sed -n 's|.*--patch[[:space:]]\+\([^[:space:]]\+\).*|\1|p')
+          else
+            CREATE_PATCH="false"
+            PATCH_VERSION=""
+          fi
+          
+          # Validate that we have a target branch
+          if [[ -z "$TARGET_BRANCH" ]]; then
+            echo "::error::Invalid cherry-pick command. Use: /cherry-pick to <branch> [--patch <version>]"
+            exit 1
+          fi
+          
+          echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_OUTPUT
+          echo "CREATE_PATCH=$CREATE_PATCH" >> $GITHUB_OUTPUT
+          echo "PATCH_VERSION=$PATCH_VERSION" >> $GITHUB_OUTPUT
+          
+          echo "Parsed command:"
+          echo "  Target branch: $TARGET_BRANCH"
+          echo "  Create patch: $CREATE_PATCH"
+          echo "  Patch version: $PATCH_VERSION"
+
+      - name: 'Add reaction to comment'
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" \
+            -f content='eyes'
+        env:
+          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: 'Trigger cherry-pick workflow'
+        run: |
+          # Get PR number from the issue URL
+          PR_NUMBER="${{ github.event.issue.number }}"
+          
+          # Trigger the cherry-pick workflow using GitHub API
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${{ github.repository }}/actions/workflows/cherry-pick-to-release.yml/dispatches" \
+            -f ref='${{ github.ref }}' \
+            -F inputs='{"pr_number":"'"$PR_NUMBER"'","target_release_branch":"${{ steps.parse_command.outputs.TARGET_BRANCH }}","create_patch_release":"${{ steps.parse_command.outputs.CREATE_PATCH }}","patch_version":"${{ steps.parse_command.outputs.PATCH_VERSION }}"}'
+          
+          echo "Cherry-pick workflow triggered for PR #$PR_NUMBER"
+        env:
+          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: 'Comment on PR'
+        run: |
+          if [[ "${{ steps.parse_command.outputs.CREATE_PATCH }}" == "true" ]]; then
+            MESSAGE="🍒 Cherry-pick workflow triggered to create patch release \`${{ steps.parse_command.outputs.PATCH_VERSION }}\` from branch \`${{ steps.parse_command.outputs.TARGET_BRANCH }}\`"
+          else
+            MESSAGE="🍒 Cherry-pick workflow triggered to branch \`${{ steps.parse_command.outputs.TARGET_BRANCH }}\`"
+          fi
+          
+          gh pr comment "${{ github.event.issue.number }}" --body "$MESSAGE
+
+          You can monitor the progress in the [Actions tab](https://github.com/${{ github.repository }}/actions/workflows/cherry-pick-to-release.yml).
+          
+          **Command executed by:** @${{ github.event.comment.user.login }}"
+        env:
+          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
