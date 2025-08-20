@@ -945,10 +945,12 @@ const App = ({ config, startupWarnings = [], version }: AppProps) => {
           key={staticKey}
           items={[
             <Box flexDirection="column" key="header">
-              {!settings.merged.hideBanner && (
-                <Header version={version} nightly={nightly} />
+              {!(
+                settings.merged.hideBanner || config.getScreenReaderMode()
+              ) && <Header version={version} nightly={nightly} />}
+              {!(settings.merged.hideTips || config.getScreenReaderMode()) && (
+                <Tips config={config} />
               )}
-              {!settings.merged.hideTips && <Tips config={config} />}
             </Box>,
             ...history.map((h) => (
               <HistoryItemDisplay
@@ -1112,12 +1114,14 @@ const App = ({ config, startupWarnings = [], version }: AppProps) => {
               <LoadingIndicator
                 thought={
                   streamingState === StreamingState.WaitingForConfirmation ||
-                  config.getAccessibility()?.disableLoadingPhrases
+                  config.getAccessibility()?.disableLoadingPhrases ||
+                  config.getScreenReaderMode()
                     ? undefined
                     : thought
                 }
                 currentLoadingPhrase={
-                  config.getAccessibility()?.disableLoadingPhrases
+                  config.getAccessibility()?.disableLoadingPhrases ||
+                  config.getScreenReaderMode()
                     ? undefined
                     : currentLoadingPhrase
                 }

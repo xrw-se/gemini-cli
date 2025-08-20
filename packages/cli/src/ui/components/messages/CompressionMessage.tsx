@@ -40,6 +40,7 @@ export const CompressionMessage: React.FC<CompressionDisplayProps> = ({
           color={
             compression.isPending ? Colors.AccentPurple : Colors.AccentGreen
           }
+          aria-label="Model:"
         >
           {text}
         </Text>

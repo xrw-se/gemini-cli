@@ -286,6 +286,7 @@ export async function main() {
       />,
       {
         exitOnCtrlC: false,
+        isScreenReaderEnabled: config.getScreenReaderMode(),
       },
     );
 
