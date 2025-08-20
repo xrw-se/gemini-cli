@@ -793,7 +793,10 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-if (import.meta.url.startsWith('file:') && process.argv[1] === url.fileURLToPath(import.meta.url)) {
+if (
+  import.meta.url.startsWith('file:') &&
+  process.argv[1] === url.fileURLToPath(import.meta.url)
+) {
   main().catch((error) => {
     logger.error('[CoreAgent] Unhandled error in main:', error);
     process.exit(1);
