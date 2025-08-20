@@ -12,7 +12,7 @@ import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
 import { FileFilteringOptions } from '../config/config.js';
 import { DEFAULT_FILE_FILTERING_OPTIONS } from '../config/config.js';
 
-const MAX_ITEMS = 200;
+const MAX_ITEMS = 1000;
 const TRUNCATION_INDICATOR = '...';
 const DEFAULT_IGNORED_FOLDERS = new Set(['node_modules', '.git', 'dist']);
 
