@@ -138,10 +138,13 @@ Releases are managed through the [release.yml](https://github.com/google-gemini/
 2.  Select the **Release** workflow from the list.
 3.  Click the **Run workflow** dropdown button.
 4.  Fill in the required inputs:
-    - **Version**: The exact version to release (e.g., `v0.2.1`).
+    - One of the following is required 
+      - **Version**: The exact version to release (e.g., `v0.2.1`). We're likely to only use this for a patch relase.
+      - **Is Preview Release**: If you select this it will calcuate the next preview release version automatically. This runs as a scheduled job we should not have to do this manually unless something failed. Mutually exclusive with `Is Nightly`
+      - **Is Nightly Release**: If you select this it will calcuate the next nightly release version automatically. This runs as a scheduled job we should not have to do this manually unless something failed. Mutually exclusive with 'Is Preview'
     - **Ref**: The branch or commit SHA to release from (defaults to `main`).
     - **Dry Run**: Leave as `true` to test the workflow without publishing, or set to `false` to perform a live release.
-5.  Click **Run workflow**.
+6.  Click **Run workflow**.
 
 ### TLDR
 
