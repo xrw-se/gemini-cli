@@ -133,11 +133,13 @@ describe('CoreToolScheduler', () => {
       getUsageStatisticsEnabled: () => true,
       getDebugMode: () => false,
       getApprovalMode: () => ApprovalMode.DEFAULT,
-      getProjectTempDir: () => '/tmp',
       getContentGeneratorConfig: () => ({
         model: 'test-model',
         authType: 'oauth-personal',
       }),
+      storage: {
+      getProjectTempDir: () => '/tmp',
+    },
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -194,11 +196,13 @@ describe('CoreToolScheduler with payload', () => {
       getUsageStatisticsEnabled: () => true,
       getDebugMode: () => false,
       getApprovalMode: () => ApprovalMode.DEFAULT,
-      getProjectTempDir: () => '/tmp',
       getContentGeneratorConfig: () => ({
         model: 'test-model',
         authType: 'oauth-personal',
       }),
+      storage: {
+        getProjectTempDir: () => '/tmp',
+      },
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -499,11 +503,13 @@ describe('CoreToolScheduler edit cancellation', () => {
       getUsageStatisticsEnabled: () => true,
       getDebugMode: () => false,
       getApprovalMode: () => ApprovalMode.DEFAULT,
-      getProjectTempDir: () => '/tmp',
       getContentGeneratorConfig: () => ({
         model: 'test-model',
         authType: 'oauth-personal',
       }),
+      storage: {
+        getProjectTempDir: () => '/tmp',
+      },
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -592,11 +598,13 @@ describe('CoreToolScheduler YOLO mode', () => {
       getUsageStatisticsEnabled: () => true,
       getDebugMode: () => false,
       getApprovalMode: () => ApprovalMode.YOLO,
-      getProjectTempDir: () => '/tmp',
       getContentGeneratorConfig: () => ({
         model: 'test-model',
         authType: 'oauth-personal',
       }),
+      storage: {
+        getProjectTempDir: () => '/tmp',
+      },
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -686,11 +694,13 @@ describe('CoreToolScheduler request queueing', () => {
       getUsageStatisticsEnabled: () => true,
       getDebugMode: () => false,
       getApprovalMode: () => ApprovalMode.YOLO, // Use YOLO to avoid confirmation prompts
-      getProjectTempDir: () => '/tmp',
       getContentGeneratorConfig: () => ({
         model: 'test-model',
         authType: 'oauth-personal',
       }),
+      storage: {
+        getProjectTempDir: () => '/tmp',
+      },
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -800,11 +810,13 @@ describe('CoreToolScheduler request queueing', () => {
       getUsageStatisticsEnabled: () => true,
       getDebugMode: () => false,
       getApprovalMode: () => ApprovalMode.YOLO,
-      getProjectTempDir: () => '/tmp',
       getContentGeneratorConfig: () => ({
         model: 'test-model',
         authType: 'oauth-personal',
       }),
+      storage: {
+        getProjectTempDir: () => '/tmp',
+      },
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -863,6 +875,9 @@ describe('CoreToolScheduler request queueing', () => {
       getApprovalMode: () => approvalMode,
       setApprovalMode: (mode: ApprovalMode) => {
         approvalMode = mode;
+      },
+      storage: {
+        getProjectTempDir: () => '/tmp',
       },
     } as unknown as Config;
 

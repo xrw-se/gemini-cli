@@ -33,7 +33,9 @@ describe('ReadFileTool', () => {
       getFileSystemService: () => new StandardFileSystemService(),
       getTargetDir: () => tempRootDir,
       getWorkspaceContext: () => createMockWorkspaceContext(tempRootDir),
-      getProjectTempDir: () => path.join(tempRootDir, '.temp'),
+      storage: {
+        getProjectTempDir: () => path.join(tempRootDir, '.temp'),
+      },
     } as unknown as Config;
     tool = new ReadFileTool(mockConfigInstance);
   });

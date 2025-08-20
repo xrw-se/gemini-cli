@@ -901,7 +901,7 @@ export class CoreToolScheduler {
                 ({ content, outputFile } = await truncateAndSaveToFile(
                   content,
                   callId,
-                  this.config.getProjectTempDir(),
+                  this.config.storage.getProjectTempDir(),
                 ));
               }
 
