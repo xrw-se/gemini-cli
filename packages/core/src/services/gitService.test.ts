@@ -70,7 +70,7 @@ describe('GitService', () => {
     vi.clearAllMocks();
     hoistedIsGitRepositoryMock.mockReturnValue(true);
     hoistedMockExec.mockImplementation((command, callback) => {
-      if (command === 'git --version') {
+      if (command === 'LANG=C git --version') {
         callback(null, 'git version 2.0.0');
       } else {
         callback(new Error('Command not mocked'));
@@ -148,7 +148,7 @@ describe('GitService', () => {
       const service = new GitService(projectRoot, storage);
       const setupSpy = vi
         .spyOn(service, 'setupShadowGitRepository')
-        .mockResolvedValue(undefined);
+        .mockResolvedValue();
 
       await service.initialize();
       expect(setupSpy).toHaveBeenCalled();
@@ -187,6 +187,14 @@ describe('GitService', () => {
       await service.setupShadowGitRepository();
       expect(hoistedMockSimpleGit).toHaveBeenCalledWith(repoDir);
       expect(hoistedMockInit).toHaveBeenCalled();
+    });
+
+    it('should initialize git repo with LANG=C', async () => {
+      hoistedMockCheckIsRepo.mockResolvedValue(false);
+      const service = new GitService(projectRoot, storage);
+      await service.setupShadowGitRepository();
+      expect(hoistedMockSimpleGit).toHaveBeenCalledWith(repoDir);
+      expect(hoistedMockEnv).toHaveBeenCalledWith({ LANG: 'C' });
     });
 
     it('should not initialize git repo if already initialized', async () => {
