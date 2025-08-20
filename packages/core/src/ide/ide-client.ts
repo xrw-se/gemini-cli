@@ -321,10 +321,12 @@ export class IdeClient {
     workspacePath?: string;
   }> {
     try {
-      const ideProcessId = await getIdeProcessId();
+      const {pid, command } = await getIdeProcessId();
+      console.log("ideProcessId: ", pid)
+      console.log("command: ", command)
       const portFile = path.join(
         os.tmpdir(),
-        `gemini-ide-server-${ideProcessId}.json`,
+        `gemini-ide-server-${pid}.json`,
       );
       const portFileContents = await fs.promises.readFile(portFile, 'utf8');
       const ideInfo = JSON.parse(portFileContents);
