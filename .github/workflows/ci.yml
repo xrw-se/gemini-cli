@@ -361,9 +361,9 @@ jobs:
         uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
 
       - name: 'Initialize CodeQL'
-        uses: 'github/codeql-action/init@df559355d593797519d70b90fc8edd5db049e7a2' # ratchet:github/codeql-action/init@v3
+        uses: 'github/codeql-action/init@96f518a34f7a870018057716cc4d7a5c014bd61c' # ratchet:github/codeql-action/init@v3
         with:
           languages: 'javascript'
 
       - name: 'Perform CodeQL Analysis'
-        uses: 'github/codeql-action/analyze@df559355d593797519d70b90fc8edd5db049e7a2' # ratchet:github/codeql-action/analyze@v3
+        uses: 'github/codeql-action/analyze@96f518a34f7a870018057716cc4d7a5c014bd61c' # ratchet:github/codeql-action/analyze@v3
