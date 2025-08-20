@@ -25,6 +25,7 @@ const hoistedMockInit = vi.hoisted(() => vi.fn());
 const hoistedMockRaw = vi.hoisted(() => vi.fn());
 const hoistedMockAdd = vi.hoisted(() => vi.fn());
 const hoistedMockCommit = vi.hoisted(() => vi.fn());
+const hoistedMockClean = vi.hoisted(() => vi.fn());
 vi.mock('simple-git', () => ({
   simpleGit: hoistedMockSimpleGit.mockImplementation(() => ({
     checkIsRepo: hoistedMockCheckIsRepo,
@@ -32,6 +33,7 @@ vi.mock('simple-git', () => ({
     raw: hoistedMockRaw,
     add: hoistedMockAdd,
     commit: hoistedMockCommit,
+    clean: hoistedMockClean,
     env: hoistedMockEnv,
   })),
   CheckRepoActions: { IS_REPO_ROOT: 'is-repo-root' },
@@ -86,6 +88,7 @@ describe('GitService', () => {
       raw: hoistedMockRaw,
       add: hoistedMockAdd,
       commit: hoistedMockCommit,
+      clean: hoistedMockClean,
     }));
     hoistedMockSimpleGit.mockImplementation(() => ({
       checkIsRepo: hoistedMockCheckIsRepo,
@@ -102,6 +105,7 @@ describe('GitService', () => {
     hoistedMockCommit.mockResolvedValue({
       commit: 'initial',
     });
+    hoistedMockClean.mockResolvedValue(undefined);
     storage = new Storage(projectRoot);
   });
 
@@ -253,6 +257,42 @@ describe('GitService', () => {
       const service = new GitService(projectRoot, storage);
       await service.setupShadowGitRepository();
       expect(hoistedMockCommit).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('shadow repository methods', () => {
+    it('getCurrentCommitHash should use LANG=C', async () => {
+      const service = new GitService(projectRoot, storage);
+      await service.getCurrentCommitHash();
+      expect(hoistedMockEnv).toHaveBeenCalledWith(
+        expect.objectContaining({ LANG: 'C' }),
+      );
+      expect(hoistedMockRaw).toHaveBeenCalledWith('rev-parse', 'HEAD');
+    });
+
+    it('createFileSnapshot should use LANG=C', async () => {
+      const service = new GitService(projectRoot, storage);
+      await service.createFileSnapshot('test commit');
+      expect(hoistedMockEnv).toHaveBeenCalledWith(
+        expect.objectContaining({ LANG: 'C' }),
+      );
+      expect(hoistedMockAdd).toHaveBeenCalledWith('.');
+      expect(hoistedMockCommit).toHaveBeenCalledWith('test commit');
+    });
+
+    it('restoreProjectFromSnapshot should use LANG=C', async () => {
+      const service = new GitService(projectRoot, storage);
+      await service.restoreProjectFromSnapshot('test-hash');
+      expect(hoistedMockEnv).toHaveBeenCalledWith(
+        expect.objectContaining({ LANG: 'C' }),
+      );
+      expect(hoistedMockRaw).toHaveBeenCalledWith([
+        'restore',
+        '--source',
+        'test-hash',
+        '.',
+      ]);
+      expect(hoistedMockClean).toHaveBeenCalledWith('f', ['-d']);
     });
   });
 });
