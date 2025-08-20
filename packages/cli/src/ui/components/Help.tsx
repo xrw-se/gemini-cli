@@ -149,7 +149,7 @@ export const Help: React.FC<Help> = ({ commands }) => (
       <Text bold color={theme.text.accent}>
         Esc
       </Text>{' '}
-      - Cancel operation
+      - Cancel operation / Clear input (double press)
     </Text>
     <Text color={theme.text.primary}>
       <Text bold color={theme.text.accent}>
