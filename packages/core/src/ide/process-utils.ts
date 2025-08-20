@@ -118,6 +118,7 @@ async function getIdeProcessIdForWindows(): Promise<{
   command: string;
 }> {
   let currentPid = process.pid;
+  let previousPid = process.pid;
 
   for (let i = 0; i < MAX_TRAVERSAL_DEPTH; i++) {
     try {
@@ -127,9 +128,10 @@ async function getIdeProcessIdForWindows(): Promise<{
         try {
           const { parentPid: grandParentPid } = await getProcessInfo(parentPid);
           if (grandParentPid === 0) {
-            // Found grandchild of root
-            const { command } = await getProcessInfo(currentPid);
-            return { pid: currentPid, command };
+            // `currentPid` is the child of the root, so `previousPid` is
+            // the grandchild.
+            const { command } = await getProcessInfo(previousPid);
+            return { pid: previousPid, command };
           }
         } catch {
           // getting grandparent failed, proceed
@@ -139,6 +141,7 @@ async function getIdeProcessIdForWindows(): Promise<{
       if (parentPid <= 0) {
         break; // Reached the root
       }
+      previousPid = currentPid;
       currentPid = parentPid;
     } catch {
       // Process in chain died
