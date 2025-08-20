@@ -32,7 +32,7 @@ describe('ShellExecutionService programmatic integration tests', () => {
       testDir,
       onOutputEvent,
       abortController.signal,
-      false
+      false,
     );
 
     const result = await handle.result;
@@ -58,7 +58,7 @@ describe('ShellExecutionService programmatic integration tests', () => {
         testDir,
         onOutputEvent,
         abortController.signal,
-        false
+        false,
       );
 
       const result = await handle.result;
