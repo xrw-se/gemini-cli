@@ -17,7 +17,7 @@ import { LSTool } from '../tools/ls.js';
 import { ReadFileTool } from '../tools/read-file.js';
 import { GrepTool } from '../tools/grep.js';
 import { GlobTool } from '../tools/glob.js';
-import { EditTool } from '../tools/edit.js';
+import { SmartEditTool } from '../tools/smart-edit.js';
 import { ShellTool } from '../tools/shell.js';
 import { WriteFileTool } from '../tools/write-file.js';
 import { WebFetchTool } from '../tools/web-fetch.js';
@@ -780,7 +780,7 @@ export class Config {
     registerCoreTool(ReadFileTool, this);
     registerCoreTool(GrepTool, this);
     registerCoreTool(GlobTool, this);
-    registerCoreTool(EditTool, this);
+    registerCoreTool(SmartEditTool, this);
     registerCoreTool(WriteFileTool, this);
     registerCoreTool(WebFetchTool, this);
     registerCoreTool(ReadManyFilesTool, this);
