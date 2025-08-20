@@ -138,8 +138,8 @@ describe('CoreToolScheduler', () => {
         authType: 'oauth-personal',
       }),
       storage: {
-      getProjectTempDir: () => '/tmp',
-    },
+        getProjectTempDir: () => '/tmp',
+      },
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
