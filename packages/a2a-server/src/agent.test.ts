@@ -196,7 +196,7 @@ describe('E2E Tests', () => {
       mockToolConfirmationFn,
     );
 
-    getToolRegistrySpy.mockResolvedValue({
+    getToolRegistrySpy.mockReturnValue({
       getAllTools: vi.fn().mockReturnValue([mockTool]),
       getToolsByServer: vi.fn().mockReturnValue([]),
       getTool: vi.fn().mockReturnValue(mockTool),
@@ -298,7 +298,7 @@ describe('E2E Tests', () => {
       mockToolConfirmationFn,
     );
 
-    getToolRegistrySpy.mockResolvedValue({
+    getToolRegistrySpy.mockReturnValue({
       getAllTools: vi.fn().mockReturnValue([mockTool1, mockTool2]),
       getToolsByServer: vi.fn().mockReturnValue([]),
       getTool: vi.fn().mockImplementation((name: string) => {
@@ -412,7 +412,7 @@ describe('E2E Tests', () => {
       returnDisplay: 'Tool executed successfully.',
     });
 
-    getToolRegistrySpy.mockResolvedValue({
+    getToolRegistrySpy.mockReturnValue({
       getAllTools: vi.fn().mockReturnValue([mockTool]),
       getToolsByServer: vi.fn().mockReturnValue([]),
       getTool: vi.fn().mockReturnValue(mockTool),
@@ -545,7 +545,7 @@ describe('E2E Tests', () => {
       returnDisplay: 'Tool executed successfully.',
     });
 
-    getToolRegistrySpy.mockResolvedValue({
+    getToolRegistrySpy.mockReturnValue({
       getAllTools: vi.fn().mockReturnValue([mockTool]),
       getToolsByServer: vi.fn().mockReturnValue([]),
       getTool: vi.fn().mockReturnValue(mockTool),
