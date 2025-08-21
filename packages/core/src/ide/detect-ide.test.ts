@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { DetectedIde, detectIde, getIdeInfo } from './detect-ide.js';
+import { DetectedIde, detectIde } from './detect-ide.js';
 
 vi.mock('node:os', () => ({
   default: {

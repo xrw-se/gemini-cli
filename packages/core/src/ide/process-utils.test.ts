@@ -1,13 +1,25 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+/**
+ * @license
+ * Copyright 2025 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  afterEach,
+  beforeEach,
+  type Mock,
+} from 'vitest';
 import { getIdeProcessInfo } from './process-utils.js';
 import os from 'node:os';
 
 const mockedExec = vi.hoisted(() => vi.fn());
-vi.mock('node:util', () => {
-  return {
-    promisify: vi.fn().mockReturnValue(mockedExec),
-  };
-});
+vi.mock('node:util', () => ({
+  promisify: vi.fn().mockReturnValue(mockedExec),
+}));
 vi.mock('node:os', () => ({
   default: {
     platform: vi.fn(),
@@ -26,7 +38,7 @@ describe('getIdeProcessInfo', () => {
 
   describe('on Unix', () => {
     it('should traverse up to find the shell and return grandparent process info', async () => {
-      (os.platform as vi.Mock).mockReturnValue('linux');
+      (os.platform as Mock).mockReturnValue('linux');
       // process (1000) -> shell (800) -> IDE (700)
       mockedExec
         .mockResolvedValueOnce({ stdout: '800 /bin/bash' }) // pid 1000 -> ppid 800 (shell)
@@ -39,7 +51,7 @@ describe('getIdeProcessInfo', () => {
     });
 
     it('should return parent process info if grandparent lookup fails', async () => {
-      (os.platform as vi.Mock).mockReturnValue('linux');
+      (os.platform as Mock).mockReturnValue('linux');
       mockedExec
         .mockResolvedValueOnce({ stdout: '800 /bin/bash' }) // pid 1000 -> ppid 800 (shell)
         .mockRejectedValueOnce(new Error('ps failed')) // lookup for ppid of 800 fails
@@ -52,7 +64,7 @@ describe('getIdeProcessInfo', () => {
 
   describe('on Windows', () => {
     it('should traverse up and find the great-grandchild of the root process', async () => {
-      (os.platform as vi.Mock).mockReturnValue('win32');
+      (os.platform as Mock).mockReturnValue('win32');
       const processInfoMap = new Map([
         [1000, { stdout: 'ParentProcessId=900\r\nCommandLine=node.exe\r\n' }],
         [
@@ -65,7 +77,7 @@ describe('getIdeProcessInfo', () => {
       mockedExec.mockImplementation((command: string) => {
         const pidMatch = command.match(/ProcessId=(\d+)/);
         if (pidMatch) {
-          const pid = parseInt(pidMatch[1]);
+          const pid = parseInt(pidMatch[1], 10);
           return Promise.resolve(processInfoMap.get(pid));
         }
         return Promise.reject(new Error('Invalid command for mock'));
