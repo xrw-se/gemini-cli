@@ -897,7 +897,7 @@ export class CoreToolScheduler {
             if (toolResult.error === undefined) {
               let content = toolResult.llmContent;
               let outputFile: string | undefined = undefined;
-              if (typeof content === 'string') {
+              if (typeof content === 'string' && this.config.getTruncateToolOutput()) {
                 ({ content, outputFile } = await truncateAndSaveToFile(
                   content,
                   callId,
