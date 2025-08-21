@@ -98,13 +98,21 @@ function extractCuratedHistory(comprehensiveHistory: Content[]): Content[] {
       }
       if (isValid) {
         curatedHistory.push(...modelOutput);
-      } else {
-        // Remove the last user input when model content is invalid.
-        curatedHistory.pop();
       }
     }
   }
   return curatedHistory;
+}
+
+/**
+ * Custom error to signal that a stream completed without valid content,
+ * which should trigger a retry.
+ */
+class EmptyStreamError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'EmptyStreamError';
+  }
 }
 
 /**
@@ -306,64 +314,80 @@ export class GeminiChat {
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     await this.sendPromise;
     const userContent = createUserContent(params.message);
-    const requestContents = this.getHistory(true).concat(userContent);
 
-    try {
-      const apiCall = () => {
-        const modelToUse = this.config.getModel();
+    // Add user content to history ONCE before any attempts.
+    this.history.push(userContent);
+    const requestContents = this.getHistory(true);
 
-        // Prevent Flash model calls immediately after quota error
-        if (
-          this.config.getQuotaErrorOccurred() &&
-          modelToUse === DEFAULT_GEMINI_FLASH_MODEL
-        ) {
-          throw new Error(
-            'Please submit a new query to continue with the Flash model.',
-          );
-        }
+    const MAX_RETRIES = 2;
+    let lastError: unknown = new Error('Request failed after all retries.');
 
-        return this.contentGenerator.generateContentStream(
-          {
-            model: modelToUse,
-            contents: requestContents,
-            config: { ...this.generationConfig, ...params.config },
-          },
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const stream = await this.makeApiCallAndYieldStream(
+          requestContents,
+          params,
           prompt_id,
         );
-      };
+        return stream; // If successful, return the generator and exit the loop.
+      } catch (error) {
+        lastError = error;
+        const errorMessage = error instanceof Error ? error.message : '';
 
-      // Note: Retrying streams can be complex. If generateContentStream itself doesn't handle retries
-      // for transient issues internally before yielding the async generator, this retry will re-initiate
-      // the stream. For simple 429/500 errors on initial call, this is fine.
-      // If errors occur mid-stream, this setup won't resume the stream; it will restart it.
-      const streamResponse = await retryWithBackoff(apiCall, {
-        shouldRetry: (error: unknown) => {
-          // Check for known error messages and codes.
-          if (error instanceof Error && error.message) {
-            if (isSchemaDepthError(error.message)) return false;
-            if (error.message.includes('429')) return true;
-            if (error.message.match(/5\d{2}/)) return true;
+        // Check for retryable conditions
+        const isRetryableNetworkError =
+          errorMessage.includes('429') || errorMessage.match(/5\d{2}/);
+        const isContentError = error instanceof EmptyStreamError;
+
+        if (isRetryableNetworkError || isContentError) {
+          if (attempt < MAX_RETRIES) {
+            await new Promise((res) => setTimeout(res, 500 * (attempt + 1)));
+            continue; // Go to the next iteration of the loop.
           }
-          return false; // Don't retry other errors by default
-        },
-        onPersistent429: async (authType?: string, error?: unknown) =>
-          await this.handleFlashFallback(authType, error),
-        authType: this.config.getContentGeneratorConfig()?.authType,
-      });
+        }
 
-      // Resolve the internal tracking of send completion promise - `sendPromise`
-      // for both success and failure response. The actual failure is still
-      // propagated by the `await streamResponse`.
-      this.sendPromise = Promise.resolve(streamResponse)
-        .then(() => undefined)
-        .catch(() => undefined);
-
-      const result = this.processStreamResponse(streamResponse, userContent);
-      return result;
-    } catch (error) {
-      this.sendPromise = Promise.resolve();
-      throw error;
+        // For non-retryable errors or if we've exhausted retries, break the loop.
+        break;
+      }
     }
+
+    // If we've broken out of the loop due to an error, clean up history and re-throw.
+    if (this.history[this.history.length - 1] === userContent) {
+      this.history.pop();
+    }
+    this.sendPromise = Promise.resolve();
+    throw lastError;
+  }
+
+  private async makeApiCallAndYieldStream(
+    requestContents: Content[],
+    params: SendMessageParameters,
+    prompt_id: string,
+  ): Promise<AsyncGenerator<GenerateContentResponse>> {
+    const apiCall = () => {
+      const modelToUse = this.config.getModel();
+
+      if (
+        this.config.getQuotaErrorOccurred() &&
+        modelToUse === DEFAULT_GEMINI_FLASH_MODEL
+      ) {
+        throw new Error(
+          'Please submit a new query to continue with the Flash model.',
+        );
+      }
+
+      return this.contentGenerator.generateContentStream(
+        {
+          model: modelToUse,
+          contents: requestContents,
+          config: { ...this.generationConfig, ...params.config },
+        },
+        prompt_id,
+      );
+    };
+
+    const streamResponse = await apiCall();
+    return this.processStreamResponse(streamResponse);
   }
 
   /**
@@ -407,8 +431,6 @@ export class GeminiChat {
 
   /**
    * Adds a new entry to the chat history.
-   *
-   * @param content - The content to add to the history.
    */
   addHistory(content: Content): void {
     this.history.push(content);
@@ -451,43 +473,30 @@ export class GeminiChat {
 
   private async *processStreamResponse(
     streamResponse: AsyncGenerator<GenerateContentResponse>,
-    inputContent: Content,
-  ) {
-    const outputContent: Content[] = [];
-    const chunks: GenerateContentResponse[] = [];
-    let errorOccurred = false;
+  ): AsyncGenerator<GenerateContentResponse> {
+    const modelResponseParts: Part[] = [];
+    let isStreamInvalid = false;
 
-    try {
-      for await (const chunk of streamResponse) {
-        if (isValidResponse(chunk)) {
-          chunks.push(chunk);
-          const content = chunk.candidates?.[0]?.content;
-          if (content !== undefined) {
-            if (this.isThoughtContent(content)) {
-              yield chunk;
-              continue;
-            }
-            outputContent.push(content);
-          }
+    for await (const chunk of streamResponse) {
+      if (isValidResponse(chunk)) {
+        const content = chunk.candidates?.[0]?.content;
+        if (content?.parts) {
+          modelResponseParts.push(...content.parts);
         }
-        yield chunk;
+      } else {
+        isStreamInvalid = true;
       }
-    } catch (error) {
-      errorOccurred = true;
-      throw error;
+      yield chunk; // Yield to the UI immediately.
     }
 
-    if (!errorOccurred) {
-      const allParts: Part[] = [];
-      for (const content of outputContent) {
-        if (content.parts) {
-          allParts.push(...content.parts);
-        }
-      }
+    // Now that the stream is finished, make a decision.
+    if (isStreamInvalid) {
+      throw new EmptyStreamError('Model stream had invalid chunks');
     }
-    this.recordHistory(inputContent, outputContent);
+
+    // If valid, add the fully assembled response to history.
+    this.history.push({ role: 'model', parts: modelResponseParts });
   }
-
   private recordHistory(
     userInput: Content,
     modelOutput: Content[],
