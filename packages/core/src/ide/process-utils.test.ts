@@ -54,22 +54,13 @@ describe('getIdeProcessInfo', () => {
     it('should traverse up and find the great-grandchild of the root process', async () => {
       (os.platform as vi.Mock).mockReturnValue('win32');
       const processInfoMap = new Map([
-        [
-          1000,
-          { stdout: 'ParentProcessId=900\r\nCommandLine=node.exe\r\n' },
-        ],
+        [1000, { stdout: 'ParentProcessId=900\r\nCommandLine=node.exe\r\n' }],
         [
           900,
           { stdout: 'ParentProcessId=800\r\nCommandLine=powershell.exe\r\n' },
         ],
-        [
-          800,
-          { stdout: 'ParentProcessId=700\r\nCommandLine=code.exe\r\n' },
-        ],
-        [
-          700,
-          { stdout: 'ParentProcessId=0\r\nCommandLine=wininit.exe\r\n' },
-        ],
+        [800, { stdout: 'ParentProcessId=700\r\nCommandLine=code.exe\r\n' }],
+        [700, { stdout: 'ParentProcessId=0\r\nCommandLine=wininit.exe\r\n' }],
       ]);
       mockedExec.mockImplementation((command: string) => {
         const pidMatch = command.match(/ProcessId=(\d+)/);
