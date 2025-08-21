@@ -1023,7 +1023,7 @@ describe('truncateAndSaveToFile', () => {
 
   it('should truncate content by lines when content has many lines', async () => {
     // Create content that exceeds 100,000 character threshold with many lines
-    const lines = Array(2000).fill('x'.repeat(100)); // 100 chars per line * 2000 lines = 200,000 chars
+    const lines = Array(2000).fill('x'.repeat(1000)); // 100 chars per line * 2000 lines = 2,000,000 chars
     const content = lines.join('\n');
     const callId = 'test-call-id';
     const projectTempDir = '/tmp';
@@ -1048,7 +1048,7 @@ describe('truncateAndSaveToFile', () => {
   });
 
   it('should truncate content by characters when content has few lines', async () => {
-    const content = 'a'.repeat(200_000); // Single very long line
+    const content = 'a'.repeat(2_000_000); // Single very long line
     const callId = 'test-call-id';
     const projectTempDir = '/tmp';
 
@@ -1072,7 +1072,7 @@ describe('truncateAndSaveToFile', () => {
   });
 
   it('should handle file write errors gracefully', async () => {
-    const content = 'a'.repeat(200_000);
+    const content = 'a'.repeat(2_000_000);
     const callId = 'test-call-id';
     const projectTempDir = '/tmp';
 
@@ -1088,7 +1088,7 @@ describe('truncateAndSaveToFile', () => {
   });
 
   it('should save to correct file path with call ID', async () => {
-    const content = 'a'.repeat(200_000);
+    const content = 'a'.repeat(2_000_000);
     const callId = 'unique-call-123';
     const projectTempDir = '/custom/temp/dir';
 
@@ -1102,7 +1102,7 @@ describe('truncateAndSaveToFile', () => {
   });
 
   it('should include helpful instructions in truncated message', async () => {
-    const content = 'a'.repeat(200_000);
+    const content = 'a'.repeat(2_000_000);
     const callId = 'test-call-id';
     const projectTempDir = '/tmp';
 
