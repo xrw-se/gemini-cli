@@ -21,6 +21,13 @@ import {
 import { DefaultArgumentProcessor } from './prompt-processors/argumentProcessor.js';
 import { CommandContext } from '../ui/commands/types.js';
 
+const mockAtFileProcess = vi.hoisted(() => vi.fn());
+vi.mock('./prompt-processors/atFileProcessor.js', () => ({
+  AtFileProcessor: vi.fn().mockImplementation(() => ({
+    process: mockAtFileProcess,
+  })),
+}));
+
 const mockShellProcess = vi.hoisted(() => vi.fn());
 vi.mock('./prompt-processors/shellProcessor.js', () => ({
   ShellProcessor: vi.fn().mockImplementation(() => ({
@@ -66,6 +73,9 @@ describe('FileCommandLoader', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAtFileProcess.mockImplementation((prompt: string) =>
+      Promise.resolve(prompt),
+    );
     mockShellProcess.mockImplementation(
       (prompt: string, context: CommandContext) => {
         const userArgsRaw = context?.invocation?.args || '';
@@ -937,7 +947,7 @@ describe('FileCommandLoader', () => {
         ),
       ).rejects.toThrow('Something else went wrong');
     });
-    it('assembles the processor pipeline in the correct order (Shell -> Default)', async () => {
+    it('assembles the processor pipeline in the correct order (Shell -> Default -> AtFile)', async () => {
       const userCommandsDir = Storage.getUserCommandsDir();
       mock({
         [userCommandsDir]: {
@@ -954,6 +964,10 @@ describe('FileCommandLoader', () => {
 
       mockShellProcess.mockImplementation((p) =>
         Promise.resolve(`${p}-shell-processed`),
+      );
+
+      mockAtFileProcess.mockImplementation((p) =>
+        Promise.resolve(`${p}-atfile-processed`),
       );
 
       vi.mocked(DefaultArgumentProcessor).mockImplementation(
@@ -982,6 +996,9 @@ describe('FileCommandLoader', () => {
       expect(mockShellProcess.mock.invocationCallOrder[0]).toBeLessThan(
         defaultProcessMock.mock.invocationCallOrder[0],
       );
+      expect(defaultProcessMock.mock.invocationCallOrder[0]).toBeLessThan(
+        mockAtFileProcess.mock.invocationCallOrder[0],
+      );
 
       // Verify the flow of the prompt through the processors
       // 1. Shell processor runs first
@@ -994,9 +1011,16 @@ describe('FileCommandLoader', () => {
         expect.stringContaining('-shell-processed'),
         expect.any(Object),
       );
+      // 3. AtFile processor runs third
+      expect(mockAtFileProcess).toHaveBeenCalledWith(
+        expect.stringContaining('-default-processed'),
+        expect.any(Object),
+      );
 
       if (result?.type === 'submit_prompt') {
-        expect(result.content).toContain('-shell-processed-default-processed');
+        expect(result.content).toContain(
+          '-shell-processed-default-processed-atfile-processed',
+        );
       } else {
         assert.fail('Incorrect action type');
       }

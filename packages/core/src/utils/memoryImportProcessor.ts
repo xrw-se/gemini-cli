@@ -213,6 +213,7 @@ export async function processImports(
   },
   projectRoot?: string,
   importFormat: 'flat' | 'tree' = 'tree',
+  recursive: boolean = true,
 ): Promise<ProcessImportsResult> {
   if (!projectRoot) {
     projectRoot = await findProjectRoot(basePath);
@@ -367,16 +368,23 @@ export async function processImports(
         currentFile: fullPath,
       };
       newImportState.processedFiles.add(fullPath);
-      const imported = await processImports(
-        fileContent,
-        path.dirname(fullPath),
-        debugMode,
-        newImportState,
-        projectRoot,
-        importFormat,
-      );
-      result += `<!-- Imported from: ${importPath} -->\n${imported.content}\n<!-- End of import from: ${importPath} -->`;
-      imports.push(imported.importTree);
+
+      // If recursion is enabled, process the imported content. Otherwise, use it as-is.
+      if (recursive) {
+        const imported = await processImports(
+          fileContent,
+          path.dirname(fullPath),
+          debugMode,
+          newImportState,
+          projectRoot,
+          importFormat,
+          recursive,
+        );
+        result += `<!-- Imported from: ${importPath} -->\n${imported.content}\n<!-- End of import from: ${importPath} -->`;
+        imports.push(imported.importTree);
+      } else {
+        result += `<!-- Imported from: ${importPath} -->\n${fileContent}\n<!-- End of import from: ${importPath} -->`;
+      }
     } catch (err: unknown) {
       let message = 'Unknown error';
       if (hasMessage(err)) {
@@ -385,7 +393,12 @@ export async function processImports(
         message = err;
       }
       logger.error(`Failed to import ${importPath}: ${message}`);
-      result += `<!-- Import failed: ${importPath} - ${message} -->`;
+      // This fails "silently" in the prompt by design. If an @-import
+      // refers to a file that doesn't exist (e.g., a typo), we want to
+      // leave the original "@path/to/file.txt" string in the prompt.
+      // This allows the model, which has access to file-reading tools,
+      // to potentially see the user's intent and correct the typo itself.
+      result += `@${importPath}`;
     }
   }
   // Add any remaining content after the last match

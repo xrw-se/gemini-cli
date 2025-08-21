@@ -27,6 +27,7 @@ import {
   ConfirmationRequiredError,
   ShellProcessor,
 } from './prompt-processors/shellProcessor.js';
+import { AtFileProcessor } from './prompt-processors/atFileProcessor.js';
 
 interface CommandDirectory {
   path: string;
@@ -224,18 +225,21 @@ export class FileCommandLoader implements ICommandLoader {
       SHELL_INJECTION_TRIGGER,
     );
 
-    // Interpolation (Shell Execution and Argument Injection)
-    // If the prompt uses either shell injection OR argument placeholders,
-    // we must use the ShellProcessor.
+    // 1. Argument and Shell Injection.
+    // This must run before the AtFileProcessor to inject dynamic @-paths.
     if (usesShellInjection || usesArgs) {
       processors.push(new ShellProcessor(baseCommandName));
     }
 
-    // Default Argument Handling
-    // If NO explicit argument injection ({{args}}) was used, we append the raw invocation.
+    // 2. Default Argument Handling.
+    // Appends the raw invocation if no explicit {{args}} are used.
     if (!usesArgs) {
       processors.push(new DefaultArgumentProcessor());
     }
+
+    // 3. @-File Injection.
+    // This runs after arguments have been injected into the prompt.
+    processors.push(new AtFileProcessor());
 
     return {
       name: baseCommandName,

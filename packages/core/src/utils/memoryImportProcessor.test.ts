@@ -212,13 +212,37 @@ describe('memoryImportProcessor', () => {
 
       const result = await processImports(content, basePath, true);
 
-      expect(result.content).toContain(
-        '<!-- Import failed: ./nonexistent.md - File not found -->',
-      );
+      expect(result.content).toContain('@./nonexistent.md');
       expect(console.error).toHaveBeenCalledWith(
         '[ERROR] [ImportProcessor]',
         'Failed to import ./nonexistent.md: File not found',
       );
+    });
+
+    it('should not process nested imports when recursive is false', async () => {
+      const content = 'Main @./nested.md content';
+      const basePath = testPath('test', 'path');
+      const nestedContent = 'Nested @./inner.md content';
+
+      mockedFs.access.mockResolvedValue(undefined);
+      mockedFs.readFile.mockResolvedValueOnce(nestedContent);
+
+      const result = await processImports(
+        content,
+        basePath,
+        true,
+        undefined,
+        undefined,
+        'tree',
+        false,
+      );
+
+      expect(result.content).toContain('<!-- Imported from: ./nested.md -->');
+      expect(result.content).toContain(nestedContent);
+      expect(result.content).not.toContain(
+        '<!-- Imported from: ./inner.md -->',
+      );
+      expect(mockedFs.readFile).toHaveBeenCalledTimes(1);
     });
 
     it('should respect max depth limit', async () => {
