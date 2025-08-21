@@ -34,9 +34,9 @@ interface ImportState {
 /**
  * Interface representing a file in the import tree
  */
-export interface MemoryFile {
+export interface ImportNode {
   path: string;
-  imports?: MemoryFile[]; // Direct imports, in the order they were imported
+  imports?: ImportNode[]; // Direct imports, in the order they were imported
 }
 
 /**
@@ -44,7 +44,7 @@ export interface MemoryFile {
  */
 export interface ProcessImportsResult {
   content: string;
-  importTree: MemoryFile;
+  importTree: ImportNode;
 }
 
 // Helper to find the project root (looks for .git directory)
@@ -334,7 +334,7 @@ export async function processImports(
   const codeRegions = findCodeRegions(content);
   let result = '';
   let lastIndex = 0;
-  const imports: MemoryFile[] = [];
+  const imports: ImportNode[] = [];
   const importsList = findImports(content);
 
   for (const { start, _end, path: importPath } of importsList) {
@@ -384,6 +384,7 @@ export async function processImports(
         imports.push(imported.importTree);
       } else {
         result += `<!-- Imported from: ${importPath} -->\n${fileContent}\n<!-- End of import from: ${importPath} -->`;
+        imports.push({ path: fullPath });
       }
     } catch (err: unknown) {
       let message = 'Unknown error';

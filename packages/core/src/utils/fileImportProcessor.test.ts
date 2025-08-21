@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { marked } from 'marked';
-import { processImports, validateImportPath } from './memoryImportProcessor.js';
+import { processImports, validateImportPath } from './fileImportProcessor.js';
 
 // Helper function to create platform-agnostic test paths
 function testPath(...segments: string[]): string {
@@ -893,6 +893,47 @@ describe('memoryImportProcessor', () => {
       expect(result.content).toContain('Root @./a.md');
       expect(result.content).toContain('A @./b.md');
       expect(result.content).toContain('B content');
+    });
+
+    it('should correctly populate importTree when recursive is false', async () => {
+      const content = 'Main @./file1.md and @./file2.js';
+      const basePath = testPath('test', 'path');
+      // Content includes a nested import that should be ignored
+      const file1Content = 'Content 1 (with @./nested.md)';
+      const file2Content = 'Content 2';
+
+      mockedFs.access.mockResolvedValue(undefined);
+      mockedFs.readFile
+        .mockResolvedValueOnce(file1Content)
+        .mockResolvedValueOnce(file2Content);
+
+      const result = await processImports(
+        content,
+        basePath,
+        false, // debugMode
+        undefined,
+        undefined,
+        'tree',
+        false, // recursive
+      );
+
+      // Verify content injection happened, but nested import was not processed
+      expect(result.content).toContain(file1Content);
+      expect(result.content).toContain(file2Content);
+      expect(mockedFs.readFile).toHaveBeenCalledTimes(2);
+
+      // Verify the import tree structure
+      expect(result.importTree.path).toBe('unknown');
+      expect(result.importTree.imports).toHaveLength(2);
+
+      // Verify the imports are recorded as leaf nodes
+      const importPaths = result.importTree.imports?.map((i) => i.path);
+      expect(importPaths).toContain(path.resolve(basePath, 'file1.md'));
+      expect(importPaths).toContain(path.resolve(basePath, 'file2.js'));
+
+      // Verify they do not have nested imports (because recursive was false)
+      expect(result.importTree.imports?.[0].imports).toBeUndefined();
+      expect(result.importTree.imports?.[1].imports).toBeUndefined();
     });
   });
 

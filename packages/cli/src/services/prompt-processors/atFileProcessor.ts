@@ -17,12 +17,12 @@ export class AtFileProcessor implements IPromptProcessor {
     // root as the base path for resolving @-file paths.
     const result = await processImports(
       prompt,
-      projectRoot, // Use project root as the base for resolving paths
+      projectRoot,
       false, // debugMode
       undefined, // default importState
       projectRoot,
       'tree', // 'tree' format injects content directly
-      false, // <--- Disable recursion for TOML commands
+      false, // Disable recursion
     );
 
     return result.content;
