@@ -550,11 +550,10 @@ describe('GeminiChat', () => {
         invalidStream,
       );
 
+      // Assert that the call rejects with our specific error type
       await expect(
         chat.sendMessageStream({ message: 'test' }, 'prompt-id-retry-fail'),
-      ).rejects.toThrow(
-        'Model stream was invalid or completed without valid content.',
-      );
+      ).rejects.toThrow(EmptyStreamError);
 
       // Should be called 3 times (initial + 2 retries)
       expect(mockModelsModule.generateContentStream).toHaveBeenCalledTimes(3);
@@ -563,7 +562,7 @@ describe('GeminiChat', () => {
       const history = chat.getHistory();
       expect(history.length).toBe(0);
     });
-  });
+ });
 
   it('should fail and throw an error after all retries on persistent invalid content', async () => {
     // All calls will return an invalid stream
