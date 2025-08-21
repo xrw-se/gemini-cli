@@ -562,7 +562,7 @@ describe('GeminiChat', () => {
       const history = chat.getHistory();
       expect(history.length).toBe(0);
     });
- });
+  });
 
   it('should fail and throw an error after all retries on persistent invalid content', async () => {
     // All calls will return an invalid stream
