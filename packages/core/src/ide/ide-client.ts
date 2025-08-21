@@ -286,7 +286,7 @@ export class IdeClient {
     if (ideWorkspacePath === undefined) {
       return {
         isValid: false,
-        error: `Failed to connect to IDE companion extension for ${currentIdeDisplayName}. Please ensure the extension is running. To install the extension, run /ide install.`,
+        error: `Failed to connect to IDE companion extension in ${currentIdeDisplayName}. Please ensure the extension is running. To install the extension, run /ide install.`,
       };
     }
 
