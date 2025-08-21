@@ -29,8 +29,14 @@ export function makeFakeConfig(
     ...DEFAULT_CONFIG_PARAMETERS,
   },
 ): Config {
-  return new Config({
+  const newConfig = new Config({
     ...DEFAULT_CONFIG_PARAMETERS,
     ...config,
   });
+  newConfig.getIdeClient = vi.fn().mockReturnValue({
+    getCurrentIde: vi.fn(),
+    addStatusChangeListener: vi.fn(),
+    removeStatusChangeListener: vi.fn()
+  });
+  return newConfig;
 }

@@ -85,6 +85,7 @@ import { McpPromptLoader } from '../../services/McpPromptLoader.js';
 import {
   SlashCommandStatus,
   makeFakeConfig,
+  IdeClient,
 } from '@google/gemini-cli-core/index.js';
 
 function createTestCommand(

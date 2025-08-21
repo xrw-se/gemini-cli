@@ -60,6 +60,11 @@ const mockConfig = {
     model: 'test-model',
     authType: 'oauth-personal',
   }),
+  getIdeClient: vi.fn().mockReturnValue({
+    addStatusChangeListener: vi.fn(),
+    removeStatusChangeListener: vi.fn(),
+    getCurrentIde: vi.fn(),
+  }),
 };
 
 class MockToolInvocation extends BaseToolInvocation<object, ToolResult> {

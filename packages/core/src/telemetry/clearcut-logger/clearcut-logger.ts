@@ -746,7 +746,7 @@ export class ClearcutLogger {
     } else if (process.env['GITHUB_SHA']) {
       return 'GitHub';
     } else if (process.env['TERM_PROGRAM'] === 'vscode') {
-      const ide = this.config?.getIdeClient().getCurrentIde();
+      const ide = this.config?.getIdeClient()?.getCurrentIde();
       return ide || DetectedIde.VSCode;
     } else {
       return 'SURFACE_NOT_SET';

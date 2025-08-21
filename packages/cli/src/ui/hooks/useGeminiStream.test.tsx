@@ -319,6 +319,9 @@ describe('useGeminiStream', () => {
       getSessionId() {
         return 'test-session-id';
       },
+      getIdeClient: vi.fn().mockReturnValue({
+        getCurrentIde: vi.fn(),
+      }),
       setQuotaErrorOccurred: vi.fn(),
       getQuotaErrorOccurred: vi.fn(() => false),
       getModel: vi.fn(() => 'gemini-2.5-pro'),
