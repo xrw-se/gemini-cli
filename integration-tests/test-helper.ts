@@ -177,7 +177,7 @@ export class TestRig {
   }
 
   run(
-    promptOrOptions: string | { prompt?: string; stdin?: string },
+    promptOrOptions?: string | { prompt?: string; stdin?: string },
     ...args: string[]
   ): Promise<string> {
     let command = `node ${this.bundlePath} --yolo`;
@@ -190,7 +190,7 @@ export class TestRig {
       encoding: 'utf-8',
     };
 
-    if (typeof promptOrOptions === 'string') {
+    if (typeof promptOrOptions === 'string' && promptOrOptions) {
       command += ` --prompt ${JSON.stringify(promptOrOptions)}`;
     } else if (
       typeof promptOrOptions === 'object' &&

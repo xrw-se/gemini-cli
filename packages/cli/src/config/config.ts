@@ -53,6 +53,7 @@ export interface CliArgs {
   sandboxImage: string | undefined;
   debug: boolean | undefined;
   prompt: string | undefined;
+  prompt_words: string[] | undefined;
   promptInteractive: string | undefined;
   allFiles: boolean | undefined;
   all_files: boolean | undefined;
@@ -79,9 +80,9 @@ export async function parseArguments(): Promise<CliArgs> {
   const yargsInstance = yargs(hideBin(process.argv))
     .scriptName('gemini')
     .usage(
-      'Usage: gemini [options] [command]\n\nGemini CLI - Launch an interactive CLI, use -p/--prompt for non-interactive mode',
+      'Usage: gemini [options] [prompt...]\n\nGemini CLI - Launch an interactive CLI, use -p/--prompt or provide a prompt directly for non-interactive mode',
     )
-    .command('$0', 'Launch Gemini CLI', (yargsInstance) =>
+    .command('$0 [prompt_words...]', 'Launch Gemini CLI', (yargsInstance) =>
       yargsInstance
         .option('model', {
           alias: 'm',
@@ -315,6 +316,7 @@ export async function loadCliConfig(
   sessionId: string,
   argv: CliArgs,
   cwd: string = process.cwd(),
+  stdinData = '',
 ): Promise<Config> {
   const debugMode =
     argv.debug ||
@@ -378,8 +380,24 @@ export async function loadCliConfig(
     fileFiltering,
   );
 
-  let mcpServers = mergeMcpServers(settings, activeExtensions);
-  const question = argv.promptInteractive || argv.prompt || '';
+  const positionalPrompt = (argv.prompt_words || []).join(' ');
+  const promptParts = [];
+  if (argv.prompt) {
+    promptParts.push(argv.prompt);
+  }
+  if (positionalPrompt) {
+    promptParts.push(positionalPrompt);
+  }
+  const combinedPrompt = promptParts.join(' ');
+
+  let question = argv.promptInteractive || combinedPrompt || '';
+  if (stdinData) {
+    question = question ? `${stdinData}\n\n${question}` : stdinData;
+  }
+
+  if (process.env['GEMINI_PROMPT_OVERRIDE']) {
+    question = process.env['GEMINI_PROMPT_OVERRIDE'];
+  }
 
   // Determine approval mode with backward compatibility
   let approvalMode: ApprovalMode;
@@ -435,6 +453,7 @@ export async function loadCliConfig(
     extraExcludes.length > 0 ? extraExcludes : undefined,
   );
   const blockedMcpServers: Array<{ name: string; extensionName: string }> = [];
+  let mcpServers = mergeMcpServers(settings, activeExtensions);
 
   if (!argv.allowedMcpServerNames) {
     if (settings.allowMCPServers) {

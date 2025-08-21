@@ -186,6 +186,7 @@ export async function start_sandbox(
   nodeArgs: string[] = [],
   cliConfig?: Config,
   cliArgs: string[] = [],
+  promptOverride?: string,
 ) {
   const patcher = new ConsolePatcher({
     debugMode: cliConfig?.getDebugMode() || !!process.env['DEBUG'],
@@ -607,6 +608,10 @@ export async function start_sandbox(
     // copy GEMINI_MODEL
     if (process.env['GEMINI_MODEL']) {
       args.push('--env', `GEMINI_MODEL=${process.env['GEMINI_MODEL']}`);
+    }
+
+    if (promptOverride) {
+      args.push('--env', `GEMINI_PROMPT_OVERRIDE=${promptOverride}`);
     }
 
     // copy TERM and COLORTERM to try to maintain terminal setup

@@ -151,12 +151,15 @@ export async function main() {
   }
 
   const argv = await parseArguments();
+  const stdinData = !process.stdin.isTTY ? await readStdin() : '';
   const extensions = loadExtensions(workspaceRoot);
   const config = await loadCliConfig(
     settings.merged,
     extensions,
     sessionId,
     argv,
+    process.cwd(),
+    stdinData,
   );
 
   const consolePatcher = new ConsolePatcher({
@@ -239,37 +242,13 @@ export async function main() {
           process.exit(1);
         }
       }
-      let stdinData = '';
-      if (!process.stdin.isTTY) {
-        stdinData = await readStdin();
-      }
-
-      // This function is a copy of the one from sandbox.ts
-      // It is moved here to decouple sandbox.ts from the CLI's argument structure.
-      const injectStdinIntoArgs = (
-        args: string[],
-        stdinData?: string,
-      ): string[] => {
-        const finalArgs = [...args];
-        if (stdinData) {
-          const promptIndex = finalArgs.findIndex(
-            (arg) => arg === '--prompt' || arg === '-p',
-          );
-          if (promptIndex > -1 && finalArgs.length > promptIndex + 1) {
-            // If there's a prompt argument, prepend stdin to it
-            finalArgs[promptIndex + 1] =
-              `${stdinData}\n\n${finalArgs[promptIndex + 1]}`;
-          } else {
-            // If there's no prompt argument, add stdin as the prompt
-            finalArgs.push('--prompt', stdinData);
-          }
-        }
-        return finalArgs;
-      };
-
-      const sandboxArgs = injectStdinIntoArgs(process.argv, stdinData);
-
-      await start_sandbox(sandboxConfig, memoryArgs, config, sandboxArgs);
+      await start_sandbox(
+        sandboxConfig,
+        memoryArgs,
+        config,
+        process.argv,
+        config.getQuestion(),
+      );
       process.exit(0);
     } else {
       // Not in a sandbox and not entering one, so relaunch with additional
@@ -293,7 +272,7 @@ export async function main() {
     return runZedIntegration(config, settings, extensions, argv);
   }
 
-  let input = config.getQuestion();
+  const input = config.getQuestion();
   const startupWarnings = [
     ...(await getStartupWarnings()),
     ...(await getUserStartupWarnings(workspaceRoot)),
@@ -333,16 +312,8 @@ export async function main() {
     registerCleanup(() => instance.unmount());
     return;
   }
-  // If not a TTY, read from stdin
-  // This is for cases where the user pipes input directly into the command
-  if (!process.stdin.isTTY) {
-    const stdinData = await readStdin();
-    if (stdinData) {
-      input = `${stdinData}\n\n${input}`;
-    }
-  }
   if (!input) {
-    console.error('No input provided via stdin.');
+    console.error('No input provided via stdin or arguments.');
     process.exit(1);
   }
 
