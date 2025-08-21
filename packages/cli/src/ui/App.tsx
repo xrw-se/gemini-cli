@@ -945,10 +945,10 @@ const App = ({ config, startupWarnings = [], version }: AppProps) => {
           key={staticKey}
           items={[
             <Box flexDirection="column" key="header">
-              {!(
-                settings.merged.hideBanner || config.getScreenReaderMode()
-              ) && <Header version={version} nightly={nightly} />}
-              {!(settings.merged.hideTips || config.getScreenReaderMode()) && (
+              {!(settings.merged.hideBanner || config.getScreenReader()) && (
+                <Header version={version} nightly={nightly} />
+              )}
+              {!(settings.merged.hideTips || config.getScreenReader()) && (
                 <Tips config={config} />
               )}
             </Box>,
@@ -1115,13 +1115,13 @@ const App = ({ config, startupWarnings = [], version }: AppProps) => {
                 thought={
                   streamingState === StreamingState.WaitingForConfirmation ||
                   config.getAccessibility()?.disableLoadingPhrases ||
-                  config.getScreenReaderMode()
+                  config.getScreenReader()
                     ? undefined
                     : thought
                 }
                 currentLoadingPhrase={
                   config.getAccessibility()?.disableLoadingPhrases ||
-                  config.getScreenReaderMode()
+                  config.getScreenReader()
                     ? undefined
                     : currentLoadingPhrase
                 }

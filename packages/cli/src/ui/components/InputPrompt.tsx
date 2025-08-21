@@ -558,7 +558,7 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
             ) : (
               '! '
             )
-          ) : config.getScreenReaderMode() ? (
+          ) : config.getScreenReader() ? (
             'User:'
           ) : (
             '> '

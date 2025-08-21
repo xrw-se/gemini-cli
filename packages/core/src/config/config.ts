@@ -62,6 +62,7 @@ export enum ApprovalMode {
 
 export interface AccessibilitySettings {
   disableLoadingPhrases?: boolean;
+  screenReader?: boolean;
 }
 
 export interface BugCommandSettings {
@@ -200,7 +201,6 @@ export interface ConfigParameters {
   trustedFolder?: boolean;
   shouldUseNodePtyShell?: boolean;
   skipNextSpeakerCheck?: boolean;
-  screenReaderMode?: boolean;
 }
 
 export class Config {
@@ -268,7 +268,6 @@ export class Config {
   private readonly trustedFolder: boolean | undefined;
   private readonly shouldUseNodePtyShell: boolean;
   private readonly skipNextSpeakerCheck: boolean;
-  private readonly screenReaderMode: boolean;
   private initialized: boolean = false;
   readonly storage: Storage;
 
@@ -339,7 +338,6 @@ export class Config {
     this.trustedFolder = params.trustedFolder;
     this.shouldUseNodePtyShell = params.shouldUseNodePtyShell ?? false;
     this.skipNextSpeakerCheck = params.skipNextSpeakerCheck ?? false;
-    this.screenReaderMode = params.screenReaderMode ?? false;
     this.storage = new Storage(this.targetDir);
 
     if (params.contextFileName) {
@@ -734,8 +732,8 @@ export class Config {
     return this.skipNextSpeakerCheck;
   }
 
-  getScreenReaderMode(): boolean {
-    return this.screenReaderMode;
+  getScreenReader(): boolean {
+    return this.accessibility.screenReader ?? false;
   }
 
   async getGitService(): Promise<GitService> {
