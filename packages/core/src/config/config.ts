@@ -201,6 +201,7 @@ export interface ConfigParameters {
   trustedFolder?: boolean;
   shouldUseNodePtyShell?: boolean;
   skipNextSpeakerCheck?: boolean;
+  enablePromptCompletion?: boolean;
 }
 
 export class Config {
@@ -268,6 +269,7 @@ export class Config {
   private readonly trustedFolder: boolean | undefined;
   private readonly shouldUseNodePtyShell: boolean;
   private readonly skipNextSpeakerCheck: boolean;
+  private readonly enablePromptCompletion: boolean = false;
   private initialized: boolean = false;
   readonly storage: Storage;
 
@@ -339,6 +341,7 @@ export class Config {
     this.shouldUseNodePtyShell = params.shouldUseNodePtyShell ?? false;
     this.skipNextSpeakerCheck = params.skipNextSpeakerCheck ?? false;
     this.storage = new Storage(this.targetDir);
+    this.enablePromptCompletion = params.enablePromptCompletion ?? false;
 
     if (params.contextFileName) {
       setGeminiMdFilename(params.contextFileName);
@@ -734,6 +737,10 @@ export class Config {
 
   getScreenReader(): boolean {
     return this.accessibility.screenReader ?? false;
+  }
+
+  getEnablePromptCompletion(): boolean {
+    return this.enablePromptCompletion;
   }
 
   async getGitService(): Promise<GitService> {
