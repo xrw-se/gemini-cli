@@ -140,6 +140,7 @@ describe('CoreToolScheduler', () => {
       storage: {
         getProjectTempDir: () => '/tmp',
       },
+      getTruncateToolOutput: () => true,
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -203,6 +204,7 @@ describe('CoreToolScheduler with payload', () => {
       storage: {
         getProjectTempDir: () => '/tmp',
       },
+      getTruncateToolOutput: () => true,
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -605,6 +607,7 @@ describe('CoreToolScheduler YOLO mode', () => {
       storage: {
         getProjectTempDir: () => '/tmp',
       },
+      getTruncateToolOutput: () => true,
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -701,6 +704,7 @@ describe('CoreToolScheduler request queueing', () => {
       storage: {
         getProjectTempDir: () => '/tmp',
       },
+      getTruncateToolOutput: () => true,
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -817,6 +821,7 @@ describe('CoreToolScheduler request queueing', () => {
       storage: {
         getProjectTempDir: () => '/tmp',
       },
+      getTruncateToolOutput: () => true,
     } as unknown as Config;
 
     const scheduler = new CoreToolScheduler({
@@ -879,6 +884,7 @@ describe('CoreToolScheduler request queueing', () => {
       storage: {
         getProjectTempDir: () => '/tmp',
       },
+      getTruncateToolOutput: () => true,
     } as unknown as Config;
 
     const testTool = new TestApprovalTool(mockConfig);

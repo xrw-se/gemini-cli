@@ -58,6 +58,7 @@ const mockConfig = {
   storage: {
     getProjectTempDir: () => '/tmp',
   },
+  getTruncateToolOutput: () => false,
   getSessionId: () => 'test-session-id',
   getContentGeneratorConfig: () => ({
     model: 'test-model',
