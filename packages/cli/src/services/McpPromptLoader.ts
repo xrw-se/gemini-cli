@@ -237,7 +237,7 @@ export class McpPromptLoader implements ICommandLoader {
     } else {
       const missingArgs: string[] = [];
       for (let i = 0; i < unfilledArgs.length; i++) {
-        if (positionalArgs.length > i && positionalArgs[i]) {
+        if (positionalArgs.length > i) {
           promptInputs[unfilledArgs[i].name] = positionalArgs[i];
         } else {
           missingArgs.push(unfilledArgs[i].name);
