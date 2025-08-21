@@ -186,7 +186,7 @@ export class McpPromptLoader implements ICommandLoader {
     const promptInputs: Record<string, unknown> = {};
 
     // arg parsing: --key="value" or --key=value
-    const namedArgRegex = /--([^=]+)=(?:"((?:\\.|[^"\\])*)"|([^ ]*))/g;
+    const namedArgRegex = /--([^=]+)=(?:"((?:\\.|[^"\\])*)"|([^ ]+))/g;
     let match;
     let lastIndex = 0;
     const positionalParts: string[] = [];
