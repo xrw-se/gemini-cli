@@ -93,7 +93,8 @@ export async function parseArguments(): Promise<CliArgs> {
         .option('prompt', {
           alias: 'p',
           type: 'string',
-          description: 'Prompt. Appended to input on stdin (if any).',
+          description:
+            '(DEPRECATED) Use positional arguments for the prompt instead. Appended to input on stdin (if any).',
         })
         .option('prompt-interactive', {
           alias: 'i',
@@ -144,6 +145,10 @@ export async function parseArguments(): Promise<CliArgs> {
         .deprecateOption(
           'show_memory_usage',
           'Use --show-memory-usage instead. We will be removing --show_memory_usage in the coming weeks.',
+        )
+        .deprecateOption(
+          'prompt',
+          'Use positional arguments for the prompt instead.',
         )
         .option('yolo', {
           alias: 'y',
