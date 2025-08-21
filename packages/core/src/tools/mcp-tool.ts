@@ -140,7 +140,11 @@ class DiscoveredMCPToolInvocation extends BaseToolInvocation<
     // Ensure the response is not an error
     if (this.isMCPToolError(rawResponseParts)) {
       throw new Error(
-        `MCP tool '${this.serverToolName}' reported tool error with response: ${JSON.stringify(rawResponseParts)}`,
+        `MCP tool '${
+          this.serverToolName
+        }' reported tool error for function call: ${safeJsonStringify(
+          functionCalls[0],
+        )} with response: ${safeJsonStringify(rawResponseParts)}`,
       );
     }
 
