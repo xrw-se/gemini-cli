@@ -386,7 +386,26 @@ export class GeminiChat {
       );
     };
 
-    const streamResponse = await apiCall();
+    // Note: Retrying streams can be complex. If generateContentStream itself doesn't handle retries
+    // for transient issues internally before yielding the async generator, this retry will re-initiate
+    // the stream. For simple 429/500 errors on initial call, this is fine.
+    // If errors occur mid-stream, this setup won't resume the stream; it will restart it.
+    const streamResponse = await retryWithBackoff(apiCall, {
+      shouldRetry: (error: unknown) => {
+        if (error instanceof Error && error.message) {
+          if (isSchemaDepthError(error.message)) return false;
+          if (error.message.includes('429')) return true;
+          if (error.message.match(/5\d{2}/)) return true;
+        }
+        return false;
+      },
+      onPersistent429: async (authType?: string, error?: unknown) =>
+        await this.handleFlashFallback(authType, error),
+      authType: this.config.getContentGeneratorConfig()?.authType,
+    });
+
+    this.sendPromise = Promise.resolve();
+
     return this.processStreamResponse(streamResponse);
   }
 
