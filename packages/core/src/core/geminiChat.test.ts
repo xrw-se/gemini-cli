@@ -518,12 +518,12 @@ describe('GeminiChat', () => {
         chunks.push(chunk);
       }
 
-      // Assertions
       expect(mockModelsModule.generateContentStream).toHaveBeenCalledTimes(2);
       expect(
         chunks.some(
           (c) =>
-            c.candidates?.[0].content?.parts[0].text === 'Successful response',
+            c.candidates?.[0]?.content?.parts?.[0]?.text ===
+            'Successful response',
         ),
       ).toBe(true);
 
