@@ -108,7 +108,7 @@ function extractCuratedHistory(comprehensiveHistory: Content[]): Content[] {
  * Custom error to signal that a stream completed without valid content,
  * which should trigger a retry.
  */
-class EmptyStreamError extends Error {
+export class EmptyStreamError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'EmptyStreamError';

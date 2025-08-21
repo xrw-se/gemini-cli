@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   Content,
   Models,
@@ -12,7 +11,8 @@ import {
   Part,
   GenerateContentResponse,
 } from '@google/genai';
-import { GeminiChat } from './geminiChat.js';
+// Add EmptyStreamError to the import list
+import { GeminiChat, EmptyStreamError } from './geminiChat.js';
 import { Config } from '../config/config.js';
 import { setSimulate429 } from '../utils/testUtils.js';
 
@@ -565,7 +565,7 @@ describe('GeminiChat', () => {
     });
   });
 
-  it('should fail after all retries on persistent invalid content', async () => {
+  it('should fail and throw an error after all retries on persistent invalid content', async () => {
     // All calls will return an invalid stream
     const invalidStream = (async function* () {
       yield {
@@ -583,11 +583,10 @@ describe('GeminiChat', () => {
       invalidStream,
     );
 
+    // FIX: Changed to assert against the error class instead of the message string.
     await expect(
       chat.sendMessageStream({ message: 'test' }, 'prompt-id-retry-fail'),
-    ).rejects.toThrow(
-      'Model stream was invalid or completed without valid content.',
-    );
+    ).rejects.toThrow(EmptyStreamError);
 
     // Should be called 3 times (initial + 2 retries)
     expect(mockModelsModule.generateContentStream).toHaveBeenCalledTimes(3);
