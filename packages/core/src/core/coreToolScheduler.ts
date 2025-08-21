@@ -227,7 +227,7 @@ const createErrorResponse = (
   errorType,
 });
 
-const TRUNCATION_THRESHOLD = 100_000;
+const TRUNCATION_THRESHOLD = 1_000_000;
 const TRUNCATION_LINES = 1_000;
 
 export async function truncateAndSaveToFile(
