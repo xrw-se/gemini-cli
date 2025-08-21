@@ -475,4 +475,125 @@ describe('GeminiChat', () => {
       expect(history[1]).toEqual(content2);
     });
   });
+  describe('sendMessageStream with retries', () => {
+    it('should retry on invalid content and succeed on the second attempt', async () => {
+      // First call returns a stream with an invalid (empty) chunk
+      const invalidStream = (async function* () {
+        yield {
+          candidates: [
+            {
+              content: {
+                parts: [{ text: '' }], // Invalid empty text part
+                role: 'model',
+              },
+            },
+          ],
+        } as unknown as GenerateContentResponse;
+      })();
+
+      // Second call returns a valid stream
+      const validStream = (async function* () {
+        yield {
+          candidates: [
+            {
+              content: {
+                parts: [{ text: 'Successful response' }],
+                role: 'model',
+              },
+            },
+          ],
+        } as unknown as GenerateContentResponse;
+      })();
+
+      vi.mocked(mockModelsModule.generateContentStream)
+        .mockResolvedValueOnce(invalidStream)
+        .mockResolvedValueOnce(validStream);
+
+      const stream = await chat.sendMessageStream(
+        { message: 'test' },
+        'prompt-id-retry-success',
+      );
+      const chunks = [];
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+
+      // Assertions
+      expect(mockModelsModule.generateContentStream).toHaveBeenCalledTimes(2);
+      expect(
+        chunks.some(
+          (c) =>
+            c.candidates?.[0].content?.parts[0].text === 'Successful response',
+        ),
+      ).toBe(true);
+
+      // Check that history was not duplicated. First call adds 1 (user), second adds 1 (model).
+      const history = chat.getHistory();
+      expect(history.length).toBe(2);
+    });
+
+    it('should fail after all retries on persistent invalid content', async () => {
+      // All calls will return an invalid stream
+      const invalidStream = (async function* () {
+        yield {
+          candidates: [
+            {
+              content: {
+                parts: [{ text: '' }],
+                role: 'model',
+              },
+            },
+          ],
+        } as unknown as GenerateContentResponse;
+      })();
+      vi.mocked(mockModelsModule.generateContentStream).mockResolvedValue(
+        invalidStream,
+      );
+
+      await expect(
+        chat.sendMessageStream({ message: 'test' }, 'prompt-id-retry-fail'),
+      ).rejects.toThrow(
+        'Model stream was invalid or completed without valid content.',
+      );
+
+      // Should be called 3 times (initial + 2 retries)
+      expect(mockModelsModule.generateContentStream).toHaveBeenCalledTimes(3);
+
+      // History should be clean, as if the failed turn never happened.
+      const history = chat.getHistory();
+      expect(history.length).toBe(0);
+    });
+  });
+
+  it('should fail after all retries on persistent invalid content', async () => {
+    // All calls will return an invalid stream
+    const invalidStream = (async function* () {
+      yield {
+        candidates: [
+          {
+            content: {
+              parts: [{ text: '' }],
+              role: 'model',
+            },
+          },
+        ],
+      } as unknown as GenerateContentResponse;
+    })();
+    vi.mocked(mockModelsModule.generateContentStream).mockResolvedValue(
+      invalidStream,
+    );
+
+    await expect(
+      chat.sendMessageStream({ message: 'test' }, 'prompt-id-retry-fail'),
+    ).rejects.toThrow(
+      'Model stream was invalid or completed without valid content.',
+    );
+
+    // Should be called 3 times (initial + 2 retries)
+    expect(mockModelsModule.generateContentStream).toHaveBeenCalledTimes(3);
+
+    // History should be clean, as if the failed turn never happened.
+    const history = chat.getHistory();
+    expect(history.length).toBe(0);
+  });
 });
