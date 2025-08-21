@@ -145,7 +145,7 @@ export class IdeClient {
 
     this.setState(
       IDEConnectionStatus.Disconnected,
-      `Failed to connect to IDE companion extension for ${this.currentIdeDisplayName}. Please ensure the extension is running. To install the extension, run /ide install.`,
+      `Failed to connect to IDE companion extension in ${this.currentIdeDisplayName}. Please ensure the extension is running. To install the extension, run /ide install.`,
       true,
     );
   }
