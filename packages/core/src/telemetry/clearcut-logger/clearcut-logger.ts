@@ -27,7 +27,7 @@ import { UserAccountManager } from '../../utils/userAccountManager.js';
 import { safeJsonStringify } from '../../utils/safeJsonStringify.js';
 import { FixedDeque } from 'mnemonist';
 import { GIT_COMMIT_INFO, CLI_VERSION } from '../../generated/git-commit.js';
-import { DetectedIde, detectIde } from '../../ide/detect-ide.js';
+import { DetectedIde } from '../../ide/detect-ide.js';
 
 export enum EventNames {
   START_SESSION = 'start_session',
@@ -74,27 +74,6 @@ export interface LogRequest {
   log_source_name: 'CONCORD';
   request_time_ms: number;
   log_event: LogEventEntry[][];
-}
-
-/**
- * Determine the surface that the user is currently using.  Surface is effectively the
- * distribution channel in which the user is using Gemini CLI.  Gemini CLI comes bundled
- * w/ Firebase Studio and Cloud Shell.  Users that manually download themselves will
- * likely be "SURFACE_NOT_SET".
- *
- * This is computed based upon a series of environment variables these distribution
- * methods might have in their runtimes.
- */
-function determineSurface(): string {
-  if (process.env['SURFACE']) {
-    return process.env['SURFACE'];
-  } else if (process.env['GITHUB_SHA']) {
-    return 'GitHub';
-  } else if (process.env['TERM_PROGRAM'] === 'vscode') {
-    return detectIde() || DetectedIde.VSCode;
-  } else {
-    return 'SURFACE_NOT_SET';
-  }
 }
 
 /**
@@ -697,7 +676,7 @@ export class ClearcutLogger {
    * should exist on all log events.
    */
   addDefaultFields(data: EventValue[], totalAccounts: number): EventValue[] {
-    const surface = determineSurface();
+    const surface = this.determineSurface();
 
     const defaultLogMetadata: EventValue[] = [
       {
@@ -748,6 +727,28 @@ export class ClearcutLogger {
 
   shutdown() {
     this.logEndSessionEvent();
+  }
+
+  /**
+   * Determine the surface that the user is currently using.  Surface is effectively the
+   * distribution channel in which the user is using Gemini CLI.  Gemini CLI comes bundled
+   * w/ Firebase Studio and Cloud Shell.  Users that manually download themselves will
+   * likely be "SURFACE_NOT_SET".
+   *
+   * This is computed based upon a series of environment variables these distribution
+   * methods might have in their runtimes.
+   */
+  private determineSurface(): string {
+    if (process.env['SURFACE']) {
+      return process.env['SURFACE'];
+    } else if (process.env['GITHUB_SHA']) {
+      return 'GitHub';
+    } else if (process.env['TERM_PROGRAM'] === 'vscode') {
+      const ide = this.config?.getIdeClient().getCurrentIde();
+      return ide || DetectedIde.VSCode;
+    } else {
+      return 'SURFACE_NOT_SET';
+    }
   }
 
   private requeueFailedEvents(eventsToSend: LogEventEntry[][]): void {

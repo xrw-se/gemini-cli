@@ -52,7 +52,7 @@ async function getProcessInfo(pid: number): Promise<{
 }
 
 /**
- * Traverses the process tree on Unix-like systems to find the IDE process ID.
+ * Finds the IDE process info on Unix-like systems.
  *
  * The strategy is to find the shell process that spawned the CLI, and then
  * find that shell's parent process (the IDE). To get the true IDE process,
@@ -60,7 +60,7 @@ async function getProcessInfo(pid: number): Promise<{
  *
  * @returns A promise that resolves to the PID and command of the IDE process.
  */
-async function getIdeProcessIdForUnix(): Promise<{
+async function getIdeProcessInfoForUnix(): Promise<{
   pid: number;
   command: string;
 }> {
@@ -107,13 +107,13 @@ async function getIdeProcessIdForUnix(): Promise<{
 }
 
 /**
- * Traverses the process tree on Windows to find the IDE process ID.
+ * Finds the IDE process info on Windows.
  *
- * The strategy is to find the grandchild of the root process.
+ * The strategy is to find the great-grandchild of the root process.
  *
  * @returns A promise that resolves to the PID and command of the IDE process.
  */
-async function getIdeProcessIdForWindows(): Promise<{
+async function getIdeProcessInfoForWindows(): Promise<{
   pid: number;
   command: string;
 }> {
@@ -128,8 +128,8 @@ async function getIdeProcessIdForWindows(): Promise<{
         try {
           const { parentPid: grandParentPid } = await getProcessInfo(parentPid);
           if (grandParentPid === 0) {
-            // `currentPid` is the child of the root, so `previousPid` is
-            // the grandchild.
+            // We've found the grandchild of the root (`currentPid`). The IDE
+            // process is its child, which we've stored in `previousPid`.
             const { command } = await getProcessInfo(previousPid);
             return { pid: previousPid, command };
           }
@@ -165,15 +165,15 @@ async function getIdeProcessIdForWindows(): Promise<{
  * @returns A promise that resolves to the PID and command of the IDE process.
  * @throws Will throw an error if the underlying shell commands fail.
  */
-export async function getIdeProcessId(): Promise<{
+export async function getIdeProcessInfo(): Promise<{
   pid: number;
   command: string;
 }> {
   const platform = os.platform();
 
   if (platform === 'win32') {
-    return getIdeProcessIdForWindows();
+    return getIdeProcessInfoForWindows();
   }
 
-  return getIdeProcessIdForUnix();
+  return getIdeProcessInfoForUnix();
 }
